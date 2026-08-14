@@ -148,11 +148,15 @@ async def run() -> str:
         last,
     )
 
-    # The refund needs the charge id, which only exists once the charge has run.
+    # The refund needs the charge id, which only exists once the charge has
+    # run. Written back to the ledger rather than patched in memory: a
+    # different container will be the one reading this contract later, and a
+    # refund with no charge id is a compensation that quietly does nothing.
     ledger = get_ledger()
     record = await ledger.get(charge) if charge else None
     if record and record.contract:
         record.contract.args["charge_id"] = (record.result or {}).get("charge_id")
+        await ledger.append(record)
 
     await _act(
         "payables",
@@ -171,7 +175,13 @@ async def run() -> str:
 
 
 async def reset() -> None:
-    """Wipe the world and the ledger so the scenario can be played again."""
+    """Wipe the world and the run so the scenario can be played again.
+
+    Clearing the in memory copy is not enough once Firestore is behind the
+    ledger. The previous run is still there, and the next read returns ten
+    actions instead of five.
+    """
     reset_world()
     ledger = get_ledger()
-    ledger._mem.clear()
+    await ledger.clear_run(RUN_ID)
+    await ledger.clear_outcome(RUN_ID)

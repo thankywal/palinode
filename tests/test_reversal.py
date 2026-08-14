@@ -270,3 +270,24 @@ async def test_ledger_survives_firestore_falling_over():
     assert await store.append(record) is record
     assert store._client is None          # demoted, not retried forever
     assert (await store.get(record.id)) is record   # memory copy still correct
+
+
+@pytest.mark.asyncio
+async def test_reset_actually_clears_the_run():
+    """Replaying the demo twice must not read back both runs."""
+    await _record("r9", "db_write", Tier.T0_REVERSIBLE)
+    await _record("r9", "slack_post", Tier.T2_SOCIAL)
+    assert len(await get_ledger().by_run("r9")) == 2
+
+    await get_ledger().clear_run("r9")
+    assert await get_ledger().by_run("r9") == []
+
+
+@pytest.mark.asyncio
+async def test_outcomes_outlive_the_request():
+    """Cloud Run has more than one container. A module global does not travel."""
+    ledger = get_ledger()
+    await ledger.save_outcome("r10", {"run_id": "r10", "exposure_usd": 4200.0})
+    assert (await ledger.get_outcome("r10"))["exposure_usd"] == 4200.0
+    await ledger.clear_outcome("r10")
+    assert await ledger.get_outcome("r10") is None

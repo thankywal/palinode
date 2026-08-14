@@ -195,6 +195,33 @@ class LedgerStore:
             self._outcomes[run_id] = outcome
         return outcome
 
+    async def clear_run(self, run_id: str) -> int:
+        """Delete a run outright. Only the demo reset uses this.
+
+        The ledger is append only for everything that matters, and this is the
+        one door out of that, kept narrow on purpose. Without it a second demo
+        run reads back ten actions instead of five, because the first run is
+        still sitting in Firestore.
+        """
+        async with self._lock:
+            doomed = [rid for rid, r in self._mem.items() if r.run_id == run_id]
+            for rid in doomed:
+                self._mem.pop(rid, None)
+
+        if self._client is None:
+            return len(doomed)
+
+        try:
+            query = self._client.collection(COLLECTION).where("run_id", "==", run_id)
+            removed = 0
+            async for doc in query.stream():
+                await doc.reference.delete()
+                removed += 1
+            return max(removed, len(doomed))
+        except Exception as exc:  # noqa: BLE001
+            self._demote("clear_run", exc)
+            return len(doomed)
+
     async def clear_outcome(self, run_id: str) -> None:
         async with self._lock:
             self._outcomes.pop(run_id, None)
