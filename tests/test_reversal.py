@@ -12,6 +12,7 @@ import pytest
 sys.path.insert(0, "src")
 
 from palinode.agents.regret import RegretAgent  # noqa: E402
+from palinode.agents.verifier import Verifier  # noqa: E402
 from palinode.connectors.base import WORLD, reset_world, run_tool  # noqa: E402
 from palinode.ledger.store import get_ledger  # noqa: E402
 from palinode.types import (  # noqa: E402
@@ -291,3 +292,45 @@ async def test_outcomes_outlive_the_request():
     assert (await ledger.get_outcome("r10"))["exposure_usd"] == 4200.0
     await ledger.clear_outcome("r10")
     assert await ledger.get_outcome("r10") is None
+
+
+# --------------------------------------------------------------- cold case
+
+
+@pytest.mark.asyncio
+async def test_a_three_week_old_action_still_reverses():
+    """Contracts are written to outlive the session that wrote them."""
+    from palinode.scenarios import cold_case
+
+    await cold_case.reset()
+    seeded = await cold_case.run()
+    assert seeded["oldest_action_age_days"] >= 22
+
+    plan = await RegretAgent(run_tool=run_tool).plan(run_id=cold_case.RUN_ID)
+    outcome = await RegretAgent(run_tool=run_tool).execute(
+        plan, verifier=Verifier(run_tool=run_tool)
+    )
+
+    assert outcome["failed"] == []
+    assert len(outcome["reversed"]) == 4
+
+    states = {r.tool: r.state for r in await get_ledger().by_run(cold_case.RUN_ID)}
+    assert states["db_write"] is ActionState.REVERSED
+    assert states["stripe_charge"] is ActionState.COMPENSATED
+
+    # The refund has to have actually moved, not just been reported.
+    from palinode.connectors.base import WORLD
+    assert WORLD["charges"]["ch_cold_1"]["refunded"] == 8400.00
+
+
+@pytest.mark.asyncio
+async def test_cold_case_reverses_newest_first_across_weeks():
+    """Ordering has to hold when every timestamp is old, not just recent ones."""
+    from palinode.scenarios import cold_case
+
+    await cold_case.reset()
+    await cold_case.run()
+
+    plan = await RegretAgent(run_tool=run_tool).plan(run_id=cold_case.RUN_ID)
+    tools = [s.tool for s in plan.steps]
+    assert tools == ["stripe_refund", "email_retract", "github_revert", "db_restore"]

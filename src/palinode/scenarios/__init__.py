@@ -1,3 +1,3 @@
-from . import poisoned_invoice
+from . import cold_case, poisoned_invoice
 
-__all__ = ["poisoned_invoice"]
+__all__ = ["cold_case", "poisoned_invoice"]

@@ -7,7 +7,7 @@ debugging during an incident.
 
 from __future__ import annotations
 
-import asyncio
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -23,7 +23,7 @@ from ..agents.verifier import Verifier
 from ..connectors.base import run_tool
 from ..ledger.store import get_ledger
 from ..config import settings
-from ..scenarios import poisoned_invoice
+from ..scenarios import cold_case, poisoned_invoice
 from ..telemetry import configure as configure_tracing
 from ..warden.registry import get_registry
 
@@ -106,6 +106,11 @@ async def run_detail(run_id: str) -> dict:
                 "caused_by": a.caused_by,
                 "exposure_usd": a.cost(),
                 "reverses_with": a.contract.tool if a.contract else None,
+                "created_at": a.created_at.isoformat(),
+                "age_days": round(
+                    (datetime.now(timezone.utc) - a.created_at).total_seconds() / 86400,
+                    1,
+                ),
             }
             for a in actions
         ],
@@ -138,6 +143,27 @@ async def reset() -> dict:
 async def screen(invoice_key: str) -> dict:
     """Run an invoice past Model Armor. Nothing executes either way."""
     return await poisoned_invoice.screen(invoice_key)
+
+
+@app.post("/demo/cold-case")
+async def seed_cold_case() -> dict:
+    """Seed a run dated three weeks back, then reverse it.
+
+    The Fleet track asks for context held across weeks of asynchronous
+    operation. This is that, end to end: contracts written twenty three days
+    ago, executed today, with nothing in the reversal path aware of the gap.
+    """
+    await cold_case.reset()
+    seeded = await cold_case.run()
+
+    regret = RegretAgent(run_tool=run_tool)
+    plan = await regret.plan(run_id=cold_case.RUN_ID)
+    outcome = await regret.execute(plan, verifier=Verifier(run_tool=run_tool))
+    outcome["run_id"] = cold_case.RUN_ID
+    outcome["triggered_by"] = "operator"
+    await get_ledger().save_outcome(cold_case.RUN_ID, outcome)
+
+    return {**seeded, "reversal": outcome}
 
 
 @app.post("/demo/seed")

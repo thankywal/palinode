@@ -117,6 +117,7 @@
   }
   .tool { font-weight:700; font-size:15px; font-family:ui-monospace,Menlo,monospace; }
   .meta { font-size:11.5px; color:var(--dim); margin-top:3px; }
+  .age { color:var(--violet); font-weight:600; }
   .state {
     font-size:10px; font-weight:800; letter-spacing:1.1px; text-transform:uppercase;
     padding:5px 10px; border-radius:6px; white-space:nowrap;
@@ -231,6 +232,7 @@
       <div class="v" id="ledger">memory</div>
     </div>
     <div class="spacer"></div>
+    <button id="cold">Three weeks ago</button>
     <button id="screen">Screen invoices</button>
     <button id="seed">Run the fleet</button>
     <button id="preview" disabled>Preview undo</button>
@@ -330,11 +332,12 @@ function nodeHtml(a) {
   const cls = ["node", a.tier, a.state].join(" ");
   const rev = a.reverses_with ? `reverses with ${a.reverses_with}` : "no reversal exists";
   const cost = a.exposure_usd ? ` &middot; $${a.exposure_usd.toLocaleString()}` : "";
+  const age = a.age_days >= 1 ? ` &middot; <span class="age">${Math.round(a.age_days)} days old</span>` : "";
   return `<div class="${cls}" id="n-${a.id}">
     <div class="tierbadge">${a.tier}</div>
     <div>
       <div class="tool">${a.tool}</div>
-      <div class="meta">${a.agent} &middot; ${rev}${cost}</div>
+      <div class="meta">${a.agent} &middot; ${rev}${cost}${age}</div>
     </div>
     <div class="state">${STATE_WORD[a.state] || a.state}</div>
   </div>`;
@@ -416,6 +419,33 @@ async function tick() {
 }
 
 // --------------------------------------------------------------- actions
+
+$("cold").onclick = async () => {
+  $("cold").disabled = true;
+  $("graph").innerHTML = `<div class="empty">replaying a run from three weeks ago</div>`;
+  $("log").innerHTML = "";
+  $("armor-panel").style.display = "none";
+  $("sentinel-panel").style.display = "none";
+  $("plan-panel").style.display = "none";
+  $("disc-panel").style.display = "none";
+  known = new Map(); queue = [];
+  if (polling) clearInterval(polling);
+
+  const result = await api("/demo/cold-case", { method: "POST" });
+  runId = result.run_id;
+  $("runid").textContent = runId;
+
+  const data = await api(`/runs/${runId}`);
+  data.actions.forEach(a => known.set(a.id, a.state));
+  paint(data.actions);
+  stats(data.actions, data.outcome);
+  await refreshRegistry();
+  log(`<b>cold case</b> oldest action ${result.oldest_action_age_days} days old`);
+  data.actions.forEach(a => log(`<b>${a.tool}</b> ${a.tier} ${STATE_WORD[a.state]}`));
+
+  $("cold").disabled = false;
+  polling = setInterval(tick, 350);
+};
 
 $("screen").onclick = async () => {
   $("screen").disabled = true;
@@ -558,7 +588,7 @@ $("undo").onclick = async () => {
 async function resume() {
   await refreshRegistry();
   try {
-    const data = await api("/runs/run_poisoned_invoice");
+    const data = await api(`/runs/${runId || "run_poisoned_invoice"}`);
     if (!data.actions) return;
     runId = data.run_id;
     $("runid").textContent = runId;
