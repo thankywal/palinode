@@ -98,6 +98,19 @@ async def run() -> dict:
     """Seed a renewal run dated three weeks back."""
     _fleet()
 
+    from ..connectors.base import WORLD, run_tool
+
+    WORLD["db"]["vendors:v-3310"] = {"status": "renewed"}
+    merge = await run_tool("github_merge", {"repo": "vendor-config", "pr": 214})
+    charge = await run_tool(
+        "stripe_charge",
+        {
+            "customer": "cus_meridian",
+            "amount_usd": 8400.00,
+            "idempotency_key": "ch_renewal3310_meridian",
+        },
+    )
+
     last = await _aged(
         "db_write",
         {"table": "vendors", "key": "v-3310", "value": {"status": "renewed"}},
@@ -117,7 +130,7 @@ async def run() -> dict:
         Tier.T1_COMPENSABLE,
         CompensationContract(
             tool="github_revert",
-            args={"repo": "vendor-config", "merge_sha": "sha_cold_1"},
+            args={"repo": "vendor-config", "merge_sha": merge["merge_sha"]},
         ),
         7,
         last,
@@ -140,13 +153,13 @@ async def run() -> dict:
         19,
         last,
     )
-    charge = await _aged(
+    charge_action = await _aged(
         "stripe_charge",
         {"customer": "cus_meridian", "amount_usd": 8400.00},
         Tier.T1_COMPENSABLE,
         CompensationContract(
             tool="stripe_refund",
-            args={"charge_id": "ch_cold_1", "amount_usd": 8400.00},
+            args={"charge_id": "ch_renewal3310_meridian", "amount_usd": 8400.00},
             verify="stripe_confirm_refund",
         ),
         26,
@@ -154,22 +167,14 @@ async def run() -> dict:
     )
 
     # The world these actions touched has to exist for the compensations to
-    # have something to act on. In a real deployment this is the vendor's own
-    # systems, still holding state from three weeks ago.
-    from ..connectors.base import WORLD
-
-    WORLD["db"]["vendors:v-3310"] = {"status": "renewed"}
-    WORLD["merges"]["sha_cold_1"] = {
-        "repo": "vendor-config",
-        "pr": 214,
-        "reverted": False,
-    }
-    WORLD["charges"]["ch_cold_1"] = {
-        "customer": "cus_meridian",
-        "amount_usd": 8400.00,
-        "refunded": 0.0,
-    }
-
+    # have something to act on. In a real deployment that is the vendor's own
+    # systems, still holding state from three weeks ago. Here the artifacts are
+    # created now and only the ledger entries are dated back, because a commit
+    # cannot be made to have happened in July.
+    #
+    # This used to seed made up ids straight into the ledger, which worked
+    # perfectly until the connectors became real and then failed with Not Found
+    # on a sha that had never existed anywhere.
     ledger = get_ledger()
     actions = await ledger.by_run(RUN_ID)
     oldest = min(a.created_at for a in actions)
@@ -179,7 +184,7 @@ async def run() -> dict:
         "run_id": RUN_ID,
         "actions": len(actions),
         "oldest_action_age_days": round(age.total_seconds() / 86400, 1),
-        "charge_id": charge,
+        "charge_id": charge_action,
         "note": (
             "Every contract here was written twenty three days ago. Nothing "
             "about reversing them today is different."

@@ -319,9 +319,14 @@ async def test_a_three_week_old_action_still_reverses():
     assert states["db_write"] is ActionState.REVERSED
     assert states["stripe_charge"] is ActionState.COMPENSATED
 
-    # The refund has to have actually moved, not just been reported.
+    # The refund has to have actually moved, not just been reported. The id is
+    # whatever the connector assigned, because the cold case now creates the
+    # artifacts it later reverses instead of inventing ids that exist nowhere.
     from palinode.connectors.base import WORLD
-    assert WORLD["charges"]["ch_cold_1"]["refunded"] == 8400.00
+
+    charges = [c for c in WORLD["charges"].values() if c["amount_usd"] == 8400.00]
+    assert charges, "the cold case never created a charge to refund"
+    assert charges[0]["refunded"] == 8400.00
 
 
 @pytest.mark.asyncio
