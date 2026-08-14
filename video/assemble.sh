@@ -48,14 +48,16 @@ for f in console/slides/*.html; do
     --allow-file-access-from-files "$f" >/dev/null 2>&1
 done
 
-# Each console capture gets four and a half seconds and a very slow push in, so
-# it reads as a held shot rather than a slide that stopped.
+# Held stills, no push in. A zoom looked better for about a second and then
+# cost 190MB per clip and six minutes of encoding, because resampling sharp
+# console text every frame is the worst case for h264. These are evidence, not
+# motion graphics, and they are more legible standing still anyway.
 i=0
 for png in console/png/*.png; do
   i=$((i+1))
   ffmpeg -v error -y -loop 1 -t 4.5 -i "$png" \
-    -vf "scale=2400:-1,zoompan=z='min(zoom+0.00035,1.06)':d=135:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30,format=yuv420p" \
-    -c:v libx264 -preset medium -crf 19 "$WORK/console-$i.mp4"
+    -vf "fps=30,format=yuv420p" -tune stillimage \
+    -c:v libx264 -preset veryfast -crf 20 "$WORK/console-$i.mp4"
 done
 
 echo "normalising"
