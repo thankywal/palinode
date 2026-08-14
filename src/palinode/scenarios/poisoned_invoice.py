@@ -140,7 +140,11 @@ async def run() -> str:
     # it up front. Waiting for the id and patching the contract afterwards
     # meant editing a ledger entry that had already been written, which is
     # exactly what an append only ledger is supposed to make impossible.
-    charge_key = f"ch_{RUN_ID}"
+    # Named after the invoice, not the run. Deriving it from RUN_ID put the
+    # word "poisoned" in the idempotency key, and Sentinel's model review
+    # promptly cited that as evidence. Handing the detector the answer in the
+    # data it is meant to judge is not detection.
+    charge_key = "ch_inv4821_northwind"
     charge = await _act(
         "payables",
         "stripe_charge",

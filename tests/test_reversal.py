@@ -5,6 +5,7 @@ Ordering and the T3 path. Everything else is plumbing.
 
 from __future__ import annotations
 
+import json
 import sys
 
 import pytest
@@ -452,3 +453,25 @@ def test_gemini_and_armor_do_not_share_a_location():
     s = Settings()
     assert s.location == "global"
     assert s.armor_location == "us-central1"
+
+
+@pytest.mark.asyncio
+async def test_the_scenario_does_not_hand_sentinel_the_answer():
+    """Sentinel's model review cited the idempotency key as evidence once.
+
+    The key was derived from the run id, which contains the word "poisoned".
+    Nothing the detector reads should name the thing it is supposed to find.
+    """
+    from palinode.scenarios import poisoned_invoice
+
+    await poisoned_invoice.reset()
+    run_id = await poisoned_invoice.run()
+
+    for record in await get_ledger().by_run(run_id):
+        blob = json.dumps({"args": record.args, "contract": (
+            record.contract.model_dump(mode="json") if record.contract else {}
+        )}, default=str).lower()
+        for tell in ("poison", "attack", "fraud", "malicious", "unknown-77"):
+            if tell == "unknown-77":
+                continue  # the beneficiary genuinely is unknown, that is the signal
+            assert tell not in blob, f"{record.tool} leaks {tell!r} to the detector"
