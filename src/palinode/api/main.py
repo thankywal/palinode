@@ -66,7 +66,14 @@ async def status() -> dict:
     domains and the request never reaches the container, which looks exactly
     like the service being down.
     """
-    return {"ok": True, "service": "palinode"}
+    from ..connectors import stripe_live
+
+    try:
+        stripe = "test mode" if stripe_live.enabled() else "simulated"
+    except Exception:  # noqa: BLE001
+        stripe = "refused, key is not sk_test_"
+
+    return {"ok": True, "service": "palinode", "stripe": stripe}
 
 
 @app.get("/registry")

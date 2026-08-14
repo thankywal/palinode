@@ -475,3 +475,45 @@ async def test_the_scenario_does_not_hand_sentinel_the_answer():
             if tell == "unknown-77":
                 continue  # the beneficiary genuinely is unknown, that is the signal
             assert tell not in blob, f"{record.tool} leaks {tell!r} to the detector"
+
+
+# ------------------------------------------------------------ stripe safety
+
+
+def test_a_live_stripe_key_is_refused(monkeypatch):
+    """The demo issues charges. Pointing it at real money is the one mistake
+    this whole project exists to prevent, so it refuses rather than warns."""
+    from palinode.connectors import stripe_live
+
+    monkeypatch.setenv("STRIPE_API_KEY", "sk_live_pretend_this_is_real")
+    with pytest.raises(stripe_live.LiveKeyRefused):
+        stripe_live.enabled()
+
+    monkeypatch.setenv("STRIPE_API_KEY", "pk_test_wrong_kind_of_key")
+    with pytest.raises(stripe_live.LiveKeyRefused):
+        stripe_live.enabled()
+
+
+def test_no_key_means_the_in_memory_stripe_stays(monkeypatch):
+    """A missing secret should cost fidelity, not break the demo."""
+    from palinode.connectors import base, stripe_live
+
+    monkeypatch.delenv("STRIPE_API_KEY", raising=False)
+    assert stripe_live.install() is False
+    assert base._TOOLS["stripe_charge"] is not stripe_live.stripe_charge
+
+
+def test_install_swaps_the_tools_when_a_test_key_is_present(monkeypatch):
+    from palinode.connectors import base, stripe_live
+
+    original = base._TOOLS["stripe_charge"]
+    monkeypatch.setenv("STRIPE_API_KEY", "sk_test_not_a_real_key")
+    try:
+        assert stripe_live.install() is True
+        assert base._TOOLS["stripe_charge"] is stripe_live.stripe_charge
+    finally:
+        # Put the in memory implementations back, or every later test in this
+        # file starts calling Stripe with a fake key.
+        import importlib
+
+        importlib.reload(base)
