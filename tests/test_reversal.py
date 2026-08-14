@@ -147,6 +147,9 @@ async def _seeded_run(run: str, beneficiary: str):
         parent=b.id,
     )
     rec.args = {"beneficiary": beneficiary, "amount_usd": 4200.0}
+    # Matches what the Warden records in production. A T3 that has run is
+    # unrecoverable, not merely executed.
+    rec.state = ActionState.UNRECOVERABLE
     b.args = {"customer": "cus_northwind", "amount_usd": 1180.0}
     return rec
 
@@ -165,6 +168,15 @@ async def test_sentinel_reverses_without_being_asked():
     assert outcome["triggered"] is True
     assert outcome["triggered_by"] == "sentinel"
     assert outcome["exposure_usd"] == 4200.0
+
+    # The wire is the symptom and it is last, so scoping the reversal to its
+    # blast radius would quietly reverse nothing. Everything reversible in the
+    # run has to come back.
+    assert len(outcome["reversed"]) == 2, outcome
+    states = {r.tool: r.state for r in await get_ledger().by_run("s1")}
+    assert states["db_write"] is ActionState.REVERSED
+    assert states["stripe_charge"] is ActionState.COMPENSATED
+    assert states["wire_transfer"] is ActionState.UNRECOVERABLE
 
 
 @pytest.mark.asyncio

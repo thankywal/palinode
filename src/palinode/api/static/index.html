@@ -170,6 +170,43 @@
   .step.dead { border-color:rgba(248,113,113,.35); background:rgba(239,68,68,.06); }
   .step.dead .n { color:var(--red); background:rgba(239,68,68,.14); border-color:rgba(248,113,113,.35); }
   .step.dead .t { color:var(--red); }
+
+  .inv {
+    border:1px solid var(--line); border-radius:9px; padding:10px 11px; margin-bottom:8px;
+  }
+  .inv:last-child { margin-bottom:0; }
+  .inv .h { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .inv .nm { font-size:13px; font-weight:700; }
+  .inv .vd {
+    font-size:9.5px; font-weight:800; letter-spacing:.7px; text-transform:uppercase;
+    padding:3px 7px; border-radius:5px; white-space:nowrap;
+  }
+  .inv.blocked { border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.07); }
+  .inv.blocked .vd { background:rgba(34,197,94,.15); color:var(--green); border:1px solid rgba(74,222,128,.4); }
+  .inv.passed { border-color:rgba(248,113,113,.4); background:rgba(239,68,68,.06); }
+  .inv.passed .vd { background:rgba(239,68,68,.14); color:var(--red); border:1px solid rgba(248,113,113,.4); }
+  .inv .d { font-size:11px; color:var(--dim); margin-top:5px; line-height:1.5; }
+
+  .sc { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .scv { font-size:34px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--violet); }
+  .scl { font-size:10.5px; color:var(--dim); margin-top:1px; }
+  .scb {
+    font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase;
+    padding:6px 11px; border-radius:6px; border:1px solid var(--line); color:var(--dim);
+  }
+  .scb.fired {
+    background:rgba(192,132,252,.15); color:var(--violet); border-color:rgba(192,132,252,.5);
+  }
+  .sig {
+    display:flex; gap:9px; align-items:baseline; padding:7px 0;
+    border-top:1px solid rgba(255,255,255,.07); font-size:11.5px;
+  }
+  .sig .w {
+    font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--violet);
+    font-weight:700; min-width:32px;
+  }
+  .sig .n { color:var(--text); font-weight:600; }
+  .sig .dt { color:var(--dim); display:block; margin-top:2px; }
   .log {
     font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--dim);
     max-height:150px; overflow-y:auto; line-height:1.85;
@@ -194,6 +231,7 @@
       <div class="v" id="ledger">memory</div>
     </div>
     <div class="spacer"></div>
+    <button id="screen">Screen invoices</button>
     <button id="seed">Run the fleet</button>
     <button id="preview" disabled>Preview undo</button>
     <button id="undo" disabled>&#8984;Z &nbsp;Undo</button>
@@ -202,6 +240,11 @@
   <div class="grid">
 
     <div>
+      <div class="panel" id="armor-panel" style="display:none">
+        <h2>Model Armor</h2>
+        <div id="armor"></div>
+        <div class="hint" id="armor-note"></div>
+      </div>
       <div class="panel">
         <h2>Agent Cataloging</h2>
         <div id="agents"><div class="hint">Nothing registered yet.</div></div>
@@ -226,6 +269,16 @@
         <div class="stat"><span class="k">Compensated</span><span class="v amber" id="s-comp">0</span></div>
         <div class="stat"><span class="k">Unrecoverable</span><span class="v red" id="s-unrec">0</span></div>
         <div class="stat"><span class="k">Exposure</span><span class="v red" id="s-exp">$0</span></div>
+      </div>
+      <div class="panel" id="sentinel-panel" style="display:none">
+        <h2>Sentinel</h2>
+        <div class="sc">
+          <div><div class="scv" id="sc-score">0.00</div>
+               <div class="scl">score, threshold 1.00</div></div>
+          <div class="scb" id="sc-verdict">watching</div>
+        </div>
+        <div id="sc-signals" style="margin-top:12px"></div>
+        <div class="hint" id="sc-note"></div>
       </div>
       <div class="panel" id="plan-panel" style="display:none">
         <h2>Reversal Plan</h2>
@@ -359,9 +412,58 @@ async function tick() {
   drain();
   stats(data.actions, data.outcome);
   await refreshRegistry();
+  await refreshSentinel();
 }
 
 // --------------------------------------------------------------- actions
+
+$("screen").onclick = async () => {
+  $("screen").disabled = true;
+  $("armor-panel").style.display = "";
+  $("armor").innerHTML = `<div class="hint">screening</div>`;
+
+  const results = [];
+  for (const key of ["loud", "quiet"]) {
+    results.push(await api(`/demo/screen/${key}`, { method: "POST" }));
+  }
+
+  $("armor").innerHTML = results.map(r => `
+    <div class="inv ${r.blocked ? "blocked" : "passed"}">
+      <div class="h">
+        <span class="nm">${r.label}</span>
+        <span class="vd">${r.blocked ? "blocked" : "passed"}</span>
+      </div>
+      <div class="d">${r.describe}</div>
+    </div>`).join("");
+
+  const passed = results.find(r => !r.blocked);
+  $("armor-note").textContent = passed ? passed.note : "";
+  results.forEach(r => log(`<b>armor</b> ${r.label}: ${r.blocked ? "blocked" : "passed"}`));
+
+  $("screen").disabled = false;
+};
+
+async function refreshSentinel() {
+  if (!runId) return null;
+  let data;
+  try { data = await api(`/sentinel/${runId}`); } catch { return null; }
+
+  $("sentinel-panel").style.display = "";
+  $("sc-score").textContent = data.score.toFixed(2);
+  const fired = data.would_reverse;
+  $("sc-verdict").textContent = fired ? "reversing" : "watching";
+  $("sc-verdict").className = "scb" + (fired ? " fired" : "");
+  $("sc-signals").innerHTML = data.signals.map(s => `
+    <div class="sig">
+      <span class="w">+${s.weight.toFixed(2)}</span>
+      <span><span class="n">${s.name.replace(/_/g, " ")}</span>
+      <span class="dt">${s.detail}</span></span>
+    </div>`).join("");
+  $("sc-note").textContent = fired
+    ? "Two signals is an incident. Sentinel reverses on its own, with nobody asked."
+    : "One oddity is a Tuesday. Sentinel holds.";
+  return data;
+}
 
 $("seed").onclick = async () => {
   $("seed").disabled = true;
@@ -369,6 +471,7 @@ $("seed").onclick = async () => {
   $("log").innerHTML = "";
   $("disc-panel").style.display = "none";
   $("plan-panel").style.display = "none";
+  $("sentinel-panel").style.display = "none";
   known = new Map(); queue = [];
 
   const { run_id } = await api("/demo/seed", { method: "POST" });
@@ -398,6 +501,20 @@ $("seed").onclick = async () => {
   $("undo").classList.add("armed");
   if (polling) clearInterval(polling);
   polling = setInterval(tick, 350);
+
+  // Hand the run to Sentinel. It decides for itself whether this was the fleet
+  // doing its job or the fleet being played, and reverses without asking. The
+  // undo button stays on as a manual override for when a person gets there
+  // first, which is not the path this is built around.
+  await new Promise(r => setTimeout(r, 900));
+  const assessment = await refreshSentinel();
+  if (assessment && assessment.would_reverse) {
+    log(`<b>sentinel</b> score ${assessment.score.toFixed(2)}, reversing`);
+    $("undo").disabled = true;
+    $("undo").classList.remove("armed");
+    $("preview").disabled = true;
+    await api(`/sentinel/${runId}/watch`, { method: "POST" });
+  }
 };
 
 $("preview").onclick = async () => {

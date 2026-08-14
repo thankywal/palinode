@@ -261,9 +261,12 @@ class Sentinel:
             "reversing %s without human approval, %s", run_id, assessment.summary()
         )
 
-        plan = await self.regret.plan(
-            run_id=run_id, from_action=assessment.trigger_action
-        )
+        # Whole run, not just the action that gave it away. The wire is the
+        # symptom and it is usually last, so scoping to its blast radius
+        # reverses nothing at all: everything it depends on came before it.
+        # When the fleet has been acting on manipulated input, the manipulated
+        # input is upstream of all of it.
+        plan = await self.regret.plan(run_id=run_id)
         outcome = await self.regret.execute(plan, verifier=verifier)
 
         if self.herald is not None:

@@ -57,6 +57,13 @@ class Settings:
     # Refuse any action whose author did not say how to take it back.
     require_contract: bool = field(default_factory=lambda: _flag("PALINODE_REQUIRE_CONTRACT", True))
 
+    # Model Armor template id. Untrusted input is screened through it before an
+    # agent sees it. Empty means screening is skipped and every action is
+    # recorded as unscreened rather than as passing.
+    model_armor_template: str = field(
+        default_factory=lambda: os.getenv("PALINODE_MODEL_ARMOR_TEMPLATE", "")
+    )
+
     @property
     def use_firestore(self) -> bool:
         return bool(self.project) and not _flag("PALINODE_FORCE_MEMORY")

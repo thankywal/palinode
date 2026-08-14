@@ -121,6 +121,12 @@ async def reset() -> dict:
     return {"ok": True}
 
 
+@app.post("/demo/screen/{invoice_key}")
+async def screen(invoice_key: str) -> dict:
+    """Run an invoice past Model Armor. Nothing executes either way."""
+    return await poisoned_invoice.screen(invoice_key)
+
+
 @app.post("/demo/seed")
 async def seed() -> dict:
     """Reset and replay the poisoned invoice scenario."""

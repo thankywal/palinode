@@ -85,6 +85,29 @@ async def _act(
     return record.id
 
 
+async def screen(invoice_key: str = "quiet") -> dict:
+    """Run the invoice past Model Armor before the fleet ever sees it.
+
+    Returns the verdict. A caught invoice never reaches an agent, which is the
+    correct outcome and the cheapest one. The interesting case is the invoice
+    that passes.
+    """
+    from ..warden.armor import get_armor
+    from .invoices import INVOICES
+
+    invoice = INVOICES.get(invoice_key, INVOICES["quiet"])
+    verdict = await get_armor().screen(invoice.text)
+
+    return {
+        "invoice": invoice.key,
+        "label": invoice.label,
+        "note": invoice.note,
+        "armor": verdict.as_dict(),
+        "blocked": verdict.blocked,
+        "describe": verdict.describe(),
+    }
+
+
 async def run() -> str:
     """Play the scenario forward. Returns the run id."""
     setup_fleet()
