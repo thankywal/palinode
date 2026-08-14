@@ -146,10 +146,10 @@ have happened, and then the whole thing come back apart.
 the fleet does its job
 
   - sourcing db_write [T0]
-  - sourcing slack_post [T2] held 30s
-  - invoice email_send [T2] held 30s
+  - sourcing slack_post [T2] held
+  - invoice email_send [T2] held
   - payables stripe_charge [T1]
-  - payables wire_transfer [T3] held 30s
+  - payables wire_transfer [T3] held
 
 the invoice was poisoned. the beneficiary is not the vendor.
 
@@ -213,10 +213,20 @@ uvicorn palinode.api.main:app --app-dir src --reload
 
 | Endpoint | What it does |
 |----------|--------------|
+| `GET /status` | liveness |
 | `GET /registry` | agent catalog, grants, budgets, runtime mode |
-| `GET /runs/{run_id}` | every action in a run with tier and state |
+| `GET /runs/{run_id}` | every action in a run with tier, state and outcome |
 | `GET /actions/{id}/blast-radius` | everything downstream of one action |
-| `POST /undo` | plan and execute a reversal, `dry_run` to preview |
+| `GET /sentinel/{run_id}` | what Sentinel makes of a run, without acting |
+| `POST /sentinel/{run_id}/watch` | hand the run to Sentinel, which reverses if it decides to |
+| `POST /undo` | operator override, `dry_run` to preview the plan |
+| `POST /demo/screen/{loud\|quiet}` | run an invoice past Model Armor |
+| `POST /demo/seed` | replay the scenario |
+| `POST /demo/reset` | clear the run |
+
+Not `/healthz`. On `run.app` domains the Google frontend answers that path
+itself and the request never reaches the container, which looks exactly like
+the service being down.
 
 ---
 
@@ -227,8 +237,34 @@ gcloud run deploy palinode \
   --source . \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID,GOOGLE_GENAI_USE_VERTEXAI=TRUE
+  --memory 512Mi --max-instances 3 \
+  --set-env-vars GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID,\
+GOOGLE_GENAI_USE_VERTEXAI=TRUE,\
+PALINODE_MODEL_ARMOR_TEMPLATE=palinode-guard
 ```
+
+The runtime service account needs `roles/datastore.user`, `roles/aiplatform.user`,
+`roles/modelarmor.user` and `roles/cloudtrace.agent`. Without the first one the
+service starts fine and then returns 500 on the first write, which is a
+confusing way to find out.
+
+Create the Model Armor template first:
+
+```bash
+TOKEN=$(gcloud auth print-access-token)
+curl -X POST \
+  "https://modelarmor.us-central1.rep.googleapis.com/v1/projects/$PROJECT/locations/us-central1/templates?template_id=palinode-guard" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"filterConfig":{"piAndJailbreakFilterSettings":{"filterEnforcement":"ENABLED","confidenceLevel":"LOW_AND_ABOVE"}}}'
+```
+
+Note the regional host. The global `modelarmor.googleapis.com` answers some
+methods and refuses others, and `gcloud model-armor` talks to the global one.
+
+**Cost.** It scales to zero and CPU is only allocated during requests, so an
+idle deployment costs nothing. Do not set `--no-cpu-throttling` or
+`--min-instances 1`: the reversal runs inside the request precisely so that
+neither is needed.
 
 ---
 
@@ -262,26 +298,45 @@ anywhere in this codebase.
 src/palinode/
   types.py              tiers, contracts, action records, reversal plans
   config.py             environment, all of it
+  telemetry.py          OpenTelemetry spans, degrades to nothing without the sdk
   warden/
     interceptor.py      the ADK callbacks, decision order lives here
     classifier.py       Flash tier classification with a static fast path
+    armor.py            Model Armor screening for untrusted input
     registry.py         agent cataloging, grants, budgets, runtime mode
   ledger/
     store.py            append only causality graph, Firestore or memory
   agents/
+    sentinel.py         decides on its own that a run went wrong
     regret.py           plans and runs the reversal
     verifier.py         confirms compensations actually landed
     herald.py           discloses what cannot be reversed
   connectors/
     base.py             tool and inverse, kept in the same file on purpose
-  api/main.py           control plane, Cloud Run
+  scenarios/
+    poisoned_invoice.py the scenario the demo and the dashboard share
+    invoices.py         the two invoices, one caught by Armor and one not
+  api/
+    main.py             control plane, Cloud Run
+    static/index.html   the dashboard
 fleet/procurement.py    the supervised demo agents
 demo.py                 the whole loop, no credentials
+video/                  remotion title cards, playwright capture, ffmpeg cut
 ```
 
 ---
 
 ## Known limits
+
+**Sentinel's weights are judgement, not measurement.** Any two signals clears
+the threshold. That number came from thinking about the failure modes, not from
+a labelled dataset, because there is not one. Tuning it finer without
+production data would be pretending to a precision this does not have.
+
+**Model Armor only sees what we hand it.** The screening step runs on the
+invoice text. An injection arriving through a tool result or a retrieved
+document would not pass through it as written, which is a gap in the plumbing
+rather than in Armor.
 
 **Causality is declared, not inferred.** Agents state their causal parent
 through the tool wrapper. Working it out automatically is the next thing to
@@ -309,10 +364,12 @@ cares about names and contracts.
 ## What's next
 
 Automatic causal inference. A counterfactual sandbox that simulates a reversal
-and shows the diff before committing to it. A2A support so Palinode can
-supervise fleets it did not wrap itself. And an actuarial layer, because once
-you can measure unrecoverable exposure in dollars per hour you can price it,
-and someone is eventually going to want to insure this.
+and shows the diff before committing to it. Screening every tool result through
+Model Armor, not just the initial input. Delegating the interception point to
+Agent Gateway once it is out of private preview, since Warden implements the
+same idea and Google's version will be better connected. And an actuarial
+layer, because once you can measure unrecoverable exposure in dollars per hour
+you can price it, and someone is eventually going to want to insure this.
 
 ---
 
