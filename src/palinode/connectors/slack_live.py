@@ -100,6 +100,45 @@ async def slack_delete(channel: str = "", ts: str = "", **_: Any) -> dict:
     }
 
 
+async def channels() -> dict:
+    """Which channels can this bot actually post to?
+
+    Setup diagnostic. Installing a Slack app and inviting the bot to a channel
+    are two different steps and the second is easy to skip, at which point
+    every post fails with not_in_channel and nothing says why.
+    """
+    if not _token():
+        return {"ok": False, "reason": "no SLACK_BOT_TOKEN"}
+
+    import httpx
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        response = await client.get(
+            f"{API}/conversations.list",
+            headers={"Authorization": f"Bearer {_token()}"},
+            params={"types": "public_channel,private_channel", "limit": 200},
+        )
+    body = response.json()
+    if not body.get("ok"):
+        return {"ok": False, "reason": body.get("error", "unknown")}
+
+    joined = [
+        {"name": f"#{c['name']}", "id": c["id"]}
+        for c in body.get("channels", [])
+        if c.get("is_member")
+    ]
+    return {
+        "ok": True,
+        "bot_is_in": joined,
+        "configured": _channel() or None,
+        "hint": (
+            "Invite the bot with /invite @palinode in the channel you want"
+            if not joined
+            else "Set SLACK_DEMO_CHANNEL to one of these"
+        ),
+    }
+
+
 def install() -> bool:
     if not enabled():
         log.info("no SLACK_BOT_TOKEN and SLACK_DEMO_CHANNEL, staying on the in memory slack")

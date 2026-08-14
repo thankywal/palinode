@@ -192,6 +192,14 @@ async def reset() -> dict:
     return {"ok": True}
 
 
+@app.get("/demo/slack/channels")
+async def slack_channels() -> dict:
+    """Setup check. Says whether the bot has actually been invited anywhere."""
+    from ..connectors import slack_live
+
+    return await slack_live.channels()
+
+
 @app.post("/demo/screen/{invoice_key}")
 async def screen(invoice_key: str) -> dict:
     """Run an invoice past Model Armor. Nothing executes either way."""
