@@ -81,14 +81,27 @@ async def status() -> dict:
     domains and the request never reaches the container, which looks exactly
     like the service being down.
     """
+    from ..connectors import live_connectors
     from ..connectors import stripe_live
 
     try:
-        stripe = "test mode" if stripe_live.enabled() else "simulated"
-    except Exception:  # noqa: BLE001
-        stripe = "refused, key is not sk_test_"
+        stripe_live.enabled()
+        refused = None
+    except Exception as exc:  # noqa: BLE001
+        refused = str(exc)[:120]
 
-    return {"ok": True, "service": "palinode", "stripe": stripe}
+    live = live_connectors()
+    return {
+        "ok": True,
+        "service": "palinode",
+        # Says plainly which systems of record are real in this deployment and
+        # which are the in memory stand ins.
+        "live_connectors": live,
+        "simulated_connectors": [
+            c for c in ("stripe", "github", "slack", "gmail", "postgres") if c not in live
+        ],
+        "stripe_refused": refused,
+    }
 
 
 @app.get("/registry")

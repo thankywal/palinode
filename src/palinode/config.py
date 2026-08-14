@@ -28,9 +28,15 @@ class Settings:
     planner_model: str = field(
         default_factory=lambda: os.getenv("PALINODE_PLANNER_MODEL", "gemini-3.5-flash")
     )
-    # Regulated tenants run the classifier inside their own VPC instead.
+    # Point the classifier at a self hosted open model for tenants whose action
+    # metadata cannot leave their own network.
+    #
+    # Untested. It is one model id and one flag, and the classifier does not
+    # care which model answers, but a Gemma endpoint has to stay warm and this
+    # project is running on a hundred dollars of credit. Left in because the
+    # seam is real and named, not because it has been exercised.
     sovereign_model: str = field(
-        default_factory=lambda: os.getenv("PALINODE_SOVEREIGN_MODEL", "gemma-3-12b-it")
+        default_factory=lambda: os.getenv("PALINODE_SOVEREIGN_MODEL", "")
     )
     sovereign_mode: bool = field(default_factory=lambda: _flag("PALINODE_SOVEREIGN_MODE"))
 
@@ -79,7 +85,9 @@ class Settings:
 
     @property
     def classifier(self) -> str:
-        return self.sovereign_model if self.sovereign_mode else self.classifier_model
+        if self.sovereign_mode and self.sovereign_model:
+            return self.sovereign_model
+        return self.classifier_model
 
 
 settings = Settings()

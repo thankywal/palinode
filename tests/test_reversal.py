@@ -548,3 +548,32 @@ def test_the_caller_is_the_client_not_the_load_balancer():
 
     assert _caller(Req("203.0.113.9, 169.254.1.1")) == "203.0.113.9"
     assert _caller(Req("")) == "10.0.0.1"
+
+
+# ------------------------------------------------- github and slack fallback
+
+
+def test_github_and_slack_stay_simulated_without_credentials(monkeypatch):
+    """Missing credentials should cost fidelity, never break the demo."""
+    from palinode.connectors import base, github_live, slack_live
+
+    for var in ("GITHUB_TOKEN", "GITHUB_DEMO_REPO", "SLACK_BOT_TOKEN", "SLACK_DEMO_CHANNEL"):
+        monkeypatch.delenv(var, raising=False)
+
+    assert github_live.install() is False
+    assert slack_live.install() is False
+    assert base._TOOLS["github_merge"] is not github_live.github_merge
+    assert base._TOOLS["slack_post"] is not slack_live.slack_post
+
+
+def test_a_token_without_a_target_is_not_enough(monkeypatch):
+    """A token and no repo would send the demo's commits somewhere unintended."""
+    from palinode.connectors import github_live, slack_live
+
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp_pretend")
+    monkeypatch.delenv("GITHUB_DEMO_REPO", raising=False)
+    assert github_live.enabled() is False
+
+    monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-pretend")
+    monkeypatch.delenv("SLACK_DEMO_CHANNEL", raising=False)
+    assert slack_live.enabled() is False
