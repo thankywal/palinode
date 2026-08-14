@@ -133,7 +133,38 @@ their behalf without a list of what that was.
 Herald handles T3. It writes the disclosure, names who was affected, and puts a
 number on the damage.
 
-### 9. Agents have a blast radius budget, not just permissions
+### 9. Every action names a principal, and the trail proves it was not edited
+
+Each agent carries a SPIFFE shaped identity:
+
+```
+spiffe://palinode/<project>/<owner>/<agent>
+```
+
+Same shape Google's Agent Identity issues, so the ledger schema does not change
+when the issuer does. A display name is not an identity, and an audit trail
+that only has one cannot answer who.
+
+An identity on a record is worth nothing if the record can be quietly edited
+afterwards, so entries are hash chained per run. Each commits to the one before
+it.
+
+```bash
+curl $SERVICE/runs/run_poisoned_invoice/verify
+# {"intact": true, "length": 5, "reason": "every entry commits to the one before it"}
+```
+
+Change an old action and the recompute fails at that entry. Remove one and the
+chain no longer joins up. This is not a blockchain and does not pretend to be.
+It is what an auditor asking "was this edited after the incident" needs.
+
+Building it found a real defect. The scenario used to write the Stripe charge
+id back into the compensation contract after the action had already been
+recorded, which is exactly the mutation an append only ledger exists to
+prevent. The fix was for the agent to name the charge before making it, the way
+idempotency keys work, so the contract can point at it up front.
+
+### 10. Agents have a blast radius budget, not just permissions
 
 An agent may accumulate at most a set amount of unrecoverable exposure per
 hour. When the budget runs out the Warden drops it to propose only mode, with
@@ -236,6 +267,7 @@ uvicorn palinode.api.main:app --app-dir src --reload
 | `GET /registry` | agent catalog, grants, budgets, runtime mode |
 | `GET /runs/{run_id}` | every action in a run with tier, state and outcome |
 | `GET /actions/{id}/blast-radius` | everything downstream of one action |
+| `GET /runs/{run_id}/verify` | recompute the hash chain, say where it breaks |
 | `GET /sentinel/{run_id}` | what Sentinel makes of a run, without acting |
 | `POST /sentinel/{run_id}/watch` | hand the run to Sentinel, which reverses if it decides to |
 | `POST /undo` | operator override, `dry_run` to preview the plan |
@@ -319,6 +351,7 @@ src/palinode/
   types.py              tiers, contracts, action records, reversal plans
   config.py             environment, all of it
   telemetry.py          OpenTelemetry spans, degrades to nothing without the sdk
+  identity.py           SPIFFE shaped ids and the tamper evident hash chain
   warden/
     interceptor.py      the ADK callbacks, decision order lives here
     classifier.py       Flash tier classification with a static fast path
