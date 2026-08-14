@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from ..agents.herald import get_herald
 from ..agents.regret import RegretAgent
+from ..agents.sentinel import Sentinel
 from ..agents.verifier import Verifier
 from ..connectors.base import run_tool
 from ..ledger.store import get_ledger
@@ -169,3 +170,49 @@ async def undo_sync(request: UndoRequest) -> dict:
     """Same thing, but waits. Easier to script against."""
     await _reverse(request.run_id, request.from_action)
     return _last_outcome
+
+
+def _sentinel() -> Sentinel:
+    regret = RegretAgent(run_tool=run_tool)
+    sentinel = Sentinel(regret=regret, herald=get_herald())
+    # Counterparties this fleet has dealt with before. In a real deployment
+    # this is the vendor master, not a literal.
+    sentinel.known_counterparties = {"cus_northwind", "ap@northwind.example"}
+    return sentinel
+
+
+@app.get("/sentinel/{run_id}")
+async def sentinel_assess(run_id: str) -> dict:
+    """What Sentinel thinks of a run, without acting on it."""
+    assessment = await _sentinel().assess(run_id)
+    return {
+        "run_id": run_id,
+        "score": assessment.score,
+        "threshold": 1.0,
+        "would_reverse": assessment.should_reverse,
+        "trigger_action": assessment.trigger_action,
+        "signals": [
+            {"name": s.name, "weight": s.weight, "detail": s.detail}
+            for s in assessment.signals
+        ],
+    }
+
+
+async def _sentinel_watch(run_id: str) -> None:
+    global _last_outcome
+    outcome = await _sentinel().watch(run_id, verifier=Verifier(run_tool=run_tool))
+    if outcome.get("triggered"):
+        _last_outcome = outcome
+
+
+@app.post("/sentinel/{run_id}/watch")
+async def sentinel_watch(run_id: str, background: BackgroundTasks) -> dict:
+    """Hand the run to Sentinel and let it decide. No approval step."""
+    assessment = await _sentinel().assess(run_id)
+    background.add_task(_sentinel_watch, run_id)
+    return {
+        "watching": run_id,
+        "score": assessment.score,
+        "will_reverse": assessment.should_reverse,
+        "signals": [s.name for s in assessment.signals],
+    }

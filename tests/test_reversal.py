@@ -123,3 +123,75 @@ def test_downgrade_is_one_way():
     assert registry.get("spender").mode is RuntimeMode.PROPOSE_ONLY
     registry.downgrade("spender", "again")
     assert registry.get("spender").mode is RuntimeMode.PROPOSE_ONLY
+
+
+# ---------------------------------------------------------------- sentinel
+
+
+async def _seeded_run(run: str, beneficiary: str):
+    """A run shaped like the poisoned invoice: ordinary chain, odd tail."""
+    from palinode.types import CompensationContract
+
+    a = await _record(
+        run, "db_write", Tier.T0_REVERSIBLE,
+        CompensationContract(tool="db_restore", args={"table": "t", "key": "k"}),
+    )
+    b = await _record(
+        run, "stripe_charge", Tier.T1_COMPENSABLE,
+        CompensationContract(tool="stripe_refund", args={"charge_id": "ch_1"}),
+        parent=a.id,
+    )
+    rec = await _record(
+        run, "wire_transfer", Tier.T3_UNRECOVERABLE,
+        CompensationContract(tool="", estimated_exposure_usd=4200.0),
+        parent=b.id,
+    )
+    rec.args = {"beneficiary": beneficiary, "amount_usd": 4200.0}
+    b.args = {"customer": "cus_northwind", "amount_usd": 1180.0}
+    return rec
+
+
+@pytest.mark.asyncio
+async def test_sentinel_reverses_without_being_asked():
+    from palinode.agents.sentinel import Sentinel
+
+    await _seeded_run("s1", "acct-unknown-77")
+
+    regret = RegretAgent(run_tool=run_tool)
+    sentinel = Sentinel(regret=regret)
+    sentinel.known_counterparties = {"cus_northwind"}
+
+    outcome = await sentinel.watch("s1")
+    assert outcome["triggered"] is True
+    assert outcome["triggered_by"] == "sentinel"
+    assert outcome["exposure_usd"] == 4200.0
+
+
+@pytest.mark.asyncio
+async def test_sentinel_leaves_a_normal_run_alone():
+    """A known counterparty at a normal size is a Tuesday, not an incident."""
+    from palinode.agents.sentinel import Sentinel
+
+    rec = await _seeded_run("s2", "cus_northwind")
+    rec.args["amount_usd"] = 1200.0
+    rec.contract.tool = "wire_recall"
+
+    sentinel = Sentinel(regret=RegretAgent(run_tool=run_tool))
+    sentinel.known_counterparties = {"cus_northwind"}
+
+    assessment = await sentinel.assess("s2")
+    assert not assessment.should_reverse
+
+
+@pytest.mark.asyncio
+async def test_sentinel_survives_losing_gemini():
+    """Static signals have to stand on their own when the model is gone."""
+    from palinode.agents.sentinel import Sentinel
+
+    await _seeded_run("s3", "acct-unknown-77")
+    sentinel = Sentinel(regret=RegretAgent(run_tool=run_tool))
+    sentinel.known_counterparties = {"cus_northwind"}
+
+    assessment = await sentinel.assess("s3")
+    assert assessment.should_reverse
+    assert all(s.name != "model_review" for s in assessment.signals)
