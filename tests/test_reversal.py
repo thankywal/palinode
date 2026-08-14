@@ -207,3 +207,46 @@ async def test_sentinel_survives_losing_gemini():
     assessment = await sentinel.assess("s3")
     assert assessment.should_reverse
     assert all(s.name != "model_review" for s in assessment.signals)
+
+
+# --------------------------------------------------------------- telemetry
+
+
+def test_spans_carry_the_decision(monkeypatch):
+    """A span with no attributes is a span nobody can audit from."""
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+        InMemorySpanExporter,
+    )
+
+    import palinode.telemetry as tel
+
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    monkeypatch.setattr(tel, "_tracer", provider.get_tracer("test"))
+    monkeypatch.setattr(tel, "_enabled", True)
+
+    with tel.span("palinode.test", tier="T3") as current:
+        tel.annotate(current, verdict="escalate")
+
+    spans = exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].attributes["palinode.tier"] == "T3"
+    assert spans[0].attributes["palinode.verdict"] == "escalate"
+
+
+def test_telemetry_is_optional():
+    """Losing the sdk must not take the system with it."""
+    import palinode.telemetry as tel
+
+    saved_tracer, saved_enabled = tel._tracer, tel._enabled
+    tel._tracer, tel._enabled = None, False
+    try:
+        with tel.span("palinode.test", tier="T0") as current:
+            assert current is None
+            tel.annotate(current, verdict="allow")
+    finally:
+        tel._tracer, tel._enabled = saved_tracer, saved_enabled

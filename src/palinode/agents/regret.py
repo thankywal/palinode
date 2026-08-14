@@ -17,6 +17,7 @@ import logging
 from typing import Awaitable, Callable, Optional
 
 from ..ledger.store import get_ledger
+from ..telemetry import annotate, span
 from ..types import (
     ActionRecord,
     ActionState,
@@ -94,34 +95,11 @@ class RegretAgent:
         failed: list[dict] = []
 
         for step in plan.steps:
-            try:
-                result = await self.run_tool(step.tool, step.args)
-            except Exception as exc:  # noqa: BLE001
-                log.exception("reversal step failed for %s", step.action_id)
-                await self.ledger.advance(step.action_id, ActionState.FAILED, error=str(exc))
-                failed.append({"action_id": step.action_id, "error": str(exc)})
-                continue
-
-            confirmed = True
-            if verifier is not None and step.verify:
-                confirmed = await verifier.confirm(step, result)
-
-            if confirmed:
-                record = await self.ledger.get(step.action_id)
-                state = (
-                    ActionState.REVERSED
-                    if record and record.tier is Tier.T0_REVERSIBLE
-                    else ActionState.COMPENSATED
-                )
-                await self.ledger.advance(step.action_id, state, result=result)
+            outcome = await self._compensate(step, verifier)
+            if outcome is None:
                 reversed_ids.append(step.action_id)
             else:
-                await self.ledger.advance(
-                    step.action_id,
-                    ActionState.FAILED,
-                    error="compensation did not verify",
-                )
-                failed.append({"action_id": step.action_id, "error": "verification failed"})
+                failed.append(outcome)
 
         return {
             "run_id": plan.run_id,
@@ -130,6 +108,46 @@ class RegretAgent:
             "unrecoverable": plan.unrecoverable,
             "exposure_usd": round(plan.exposure_usd, 2),
         }
+
+    async def _compensate(self, step: ReversalStep, verifier) -> Optional[dict]:
+        """Run one compensation. Returns None on success, or the failure."""
+        with span(
+            "palinode.regret.compensate",
+            action_id=step.action_id,
+            tool=step.tool,
+        ) as current:
+            try:
+                result = await self.run_tool(step.tool, step.args)
+            except Exception as exc:  # noqa: BLE001
+                log.exception("reversal step failed for %s", step.action_id)
+                await self.ledger.advance(
+                    step.action_id, ActionState.FAILED, error=str(exc)
+                )
+                annotate(current, outcome="failed", error=str(exc)[:160])
+                return {"action_id": step.action_id, "error": str(exc)}
+
+            confirmed = True
+            if verifier is not None and step.verify:
+                confirmed = await verifier.confirm(step, result)
+
+            if not confirmed:
+                await self.ledger.advance(
+                    step.action_id,
+                    ActionState.FAILED,
+                    error="compensation did not verify",
+                )
+                annotate(current, outcome="unverified")
+                return {"action_id": step.action_id, "error": "verification failed"}
+
+            record = await self.ledger.get(step.action_id)
+            state = (
+                ActionState.REVERSED
+                if record and record.tier is Tier.T0_REVERSIBLE
+                else ActionState.COMPENSATED
+            )
+            await self.ledger.advance(step.action_id, state, result=result)
+            annotate(current, outcome=state.value, verified=bool(step.verify))
+            return None
 
     async def unrecoverable_records(self, plan: ReversalPlan) -> list[ActionRecord]:
         records = [await self.ledger.get(aid) for aid in plan.unrecoverable]

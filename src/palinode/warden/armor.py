@@ -32,6 +32,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ..config import settings
+from ..telemetry import span
 
 log = logging.getLogger("palinode.armor")
 
@@ -164,6 +165,13 @@ class ModelArmor:
         verdict = ArmorVerdict(
             checked=True, matched=matched, confidence=confidence, filters=filters
         )
+        with span(
+            "palinode.armor.screen",
+            matched=matched,
+            confidence=confidence or "none",
+            template=self.template,
+        ):
+            pass
         if matched:
             log.warning("model armor blocked input: %s", verdict.describe())
         return verdict

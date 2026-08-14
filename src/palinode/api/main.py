@@ -22,10 +22,17 @@ from ..agents.sentinel import Sentinel
 from ..agents.verifier import Verifier
 from ..connectors.base import run_tool
 from ..ledger.store import get_ledger
+from ..config import settings
 from ..scenarios import poisoned_invoice
+from ..telemetry import configure as configure_tracing
 from ..warden.registry import get_registry
 
 app = FastAPI(title="Palinode", version="0.1.0")
+
+# Spans go to Cloud Trace when a project is configured. ADK already traces the
+# agent runs and tool calls, so what we add is the part it cannot know: why an
+# action got the tier it did and what happened when the reversal ran.
+configure_tracing(settings.project)
 
 STATIC = Path(__file__).parent / "static"
 if STATIC.is_dir():

@@ -22,6 +22,7 @@ from typing import Optional
 
 from ..config import settings
 from ..ledger.store import get_ledger
+from ..telemetry import annotate, span
 from ..types import ActionRecord, ActionState, Tier
 
 log = logging.getLogger("palinode.sentinel")
@@ -242,6 +243,14 @@ class Sentinel:
             trigger_action=trigger,
             rationale=rationale,
         )
+        with span(
+            "palinode.sentinel.assess",
+            run_id=run_id,
+            score=assessment.score,
+            would_reverse=assessment.should_reverse,
+            signals=",".join(s.name for s in signals),
+        ):
+            pass
         log.info("assessed %s: %s", run_id, assessment.summary())
         return assessment
 

@@ -19,6 +19,7 @@ from typing import Any, Optional
 
 from ..config import settings
 from ..ledger.store import get_ledger
+from ..telemetry import annotate, span
 from ..types import (
     ActionRecord,
     ActionState,
@@ -48,6 +49,28 @@ class Warden:
     # ------------------------------------------------------------- decision
 
     async def evaluate(
+        self,
+        *,
+        agent: str,
+        tool: str,
+        args: dict[str, Any],
+        contract: Optional[CompensationContract],
+    ) -> tuple[Decision, Optional[ActionRecord]]:
+        with span("palinode.warden.evaluate", agent=agent, tool=tool) as current:
+            decision, record = await self._evaluate(
+                agent=agent, tool=tool, args=args, contract=contract
+            )
+            annotate(
+                current,
+                verdict=decision.verdict.value,
+                tier=decision.tier.value,
+                reason=decision.reason,
+                hold_seconds=decision.hold_seconds,
+                has_contract=contract is not None,
+            )
+            return decision, record
+
+    async def _evaluate(
         self,
         *,
         agent: str,
