@@ -1,0 +1,24 @@
+{
+  "name": "palinode-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Title cards and chapter framing for the Palinode demo video",
+  "scripts": {
+    "studio": "remotion studio",
+    "render:intro": "remotion render Intro out/intro.mp4",
+    "render:outro": "remotion render Outro out/outro.mp4",
+    "render:all": "remotion render Intro out/intro.mp4 && remotion render Outro out/outro.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.509",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "remotion": "^4.0.509"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^5.7.3"
+  },
+  "main": "src/index.ts"
+}
