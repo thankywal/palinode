@@ -75,7 +75,10 @@ class Herald:
                     party=party,
                     reason=record.tier_reason or "no reversal path exists",
                 ),
-                config={"temperature": 0.2, "max_output_tokens": 400},
+                # Room for the model to think and still finish the sentence.
+                # At 400 the thinking budget ate the disclosure and the
+                # affected party got half of one.
+                config={"temperature": 0.2, "max_output_tokens": 2000},
             )
             return (response.text or "").strip()
         except Exception as exc:  # noqa: BLE001

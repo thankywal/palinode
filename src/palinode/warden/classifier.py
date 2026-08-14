@@ -102,6 +102,14 @@ class ReversibilityClassifier:
                     "temperature": 0,
                     "max_output_tokens": 80,
                     "response_mime_type": "application/json",
+                    # Thinking off. Gemini 3.5 Flash spends thinking tokens out
+                    # of max_output_tokens, so an 80 token budget produced 76
+                    # tokens of reasoning, no output at all, and a MAX_TOKENS
+                    # finish that looked exactly like the model being broken.
+                    # It also costs latency this call does not have: the whole
+                    # point of the tier being decided inline is that it is
+                    # cheap enough to sit in front of every tool call.
+                    "thinking_config": {"thinking_budget": 0},
                 },
             )
             parsed = _parse(response.text or "")

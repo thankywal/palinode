@@ -192,8 +192,11 @@ class Sentinel:
                 contents=_PROMPT.format(actions=payload),
                 config={
                     "temperature": 0,
-                    "max_output_tokens": 120,
+                    "max_output_tokens": 200,
                     "response_mime_type": "application/json",
+                    # See the classifier. A fixed shape verdict does not need
+                    # reasoning tokens, and with them on this returned nothing.
+                    "thinking_config": {"thinking_budget": 0},
                 },
             )
             match = re.search(r"\{.*\}", response.text or "", re.S)
