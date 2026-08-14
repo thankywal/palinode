@@ -396,3 +396,21 @@ def test_registry_versions_on_changed_grants():
     )
     assert wider.version == 2
     assert len(registry.history("v")) == 2
+
+
+@pytest.mark.asyncio
+async def test_the_scenario_never_edits_a_written_entry():
+    """The chain is only worth having if the happy path does not break it.
+
+    This caught a real defect: the charge id was written back into the
+    compensation contract after the action had already been recorded, which is
+    the exact mutation an append only ledger exists to prevent.
+    """
+    from palinode.scenarios import poisoned_invoice
+
+    await poisoned_invoice.reset()
+    run_id = await poisoned_invoice.run()
+
+    report = await get_ledger().verify(run_id)
+    assert report.intact, report.reason
+    assert report.length == 5

@@ -137,8 +137,14 @@ async def slack_delete(channel: str = "", ts: str = "", **_: Any) -> dict:
 
 
 @tool("stripe_charge")
-async def stripe_charge(customer: str, amount_usd: float, **_: Any) -> dict:
-    charge_id = f"ch_{len(WORLD['charges']) + 1}"
+async def stripe_charge(
+    customer: str, amount_usd: float, idempotency_key: str = "", **_: Any
+) -> dict:
+    # The caller names the charge. Stripe works this way for the same reason:
+    # if the response is lost you still know what you created. It also means a
+    # compensation contract can reference the charge before it exists, so the
+    # contract never has to be edited after the fact.
+    charge_id = idempotency_key or f"ch_{len(WORLD['charges']) + 1}"
     WORLD["charges"][charge_id] = {
         "customer": customer,
         "amount_usd": amount_usd,

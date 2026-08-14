@@ -136,27 +136,26 @@ async def run() -> str:
         ),
         last,
     )
+    # The agent names the charge before making it, so the contract can point at
+    # it up front. Waiting for the id and patching the contract afterwards
+    # meant editing a ledger entry that had already been written, which is
+    # exactly what an append only ledger is supposed to make impossible.
+    charge_key = f"ch_{RUN_ID}"
     charge = await _act(
         "payables",
         "stripe_charge",
-        {"customer": "cus_northwind", "amount_usd": 1180.00},
+        {
+            "customer": "cus_northwind",
+            "amount_usd": 1180.00,
+            "idempotency_key": charge_key,
+        },
         CompensationContract(
             tool="stripe_refund",
-            args={"amount_usd": 1180.00},
+            args={"charge_id": charge_key, "amount_usd": 1180.00},
             verify="stripe_confirm_refund",
         ),
         last,
     )
-
-    # The refund needs the charge id, which only exists once the charge has
-    # run. Written back to the ledger rather than patched in memory: a
-    # different container will be the one reading this contract later, and a
-    # refund with no charge id is a compensation that quietly does nothing.
-    ledger = get_ledger()
-    record = await ledger.get(charge) if charge else None
-    if record and record.contract:
-        record.contract.args["charge_id"] = (record.result or {}).get("charge_id")
-        await ledger.append(record)
 
     await _act(
         "payables",
