@@ -7,6 +7,7 @@ debugging during an incident.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -26,6 +27,14 @@ from ..config import settings
 from ..scenarios import cold_case, poisoned_invoice
 from ..telemetry import configure as configure_tracing
 from ..warden.registry import get_registry
+
+# Uvicorn configures the root logger and leaves ours at WARNING, so every
+# log.info in this codebase went nowhere. That includes the Stripe charge and
+# refund ids, which are the operational record of what the reversal actually
+# did, and the first thing anyone would look for in the logs.
+logging.getLogger("palinode").setLevel(logging.INFO)
+if not logging.getLogger().handlers:
+    logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
 
 app = FastAPI(title="Palinode", version="0.1.0")
 
