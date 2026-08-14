@@ -15,11 +15,15 @@ Three rules this file enforces, in order of how much they matter:
      the demo runs as before, so a missing secret degrades the fidelity of the
      demo rather than breaking it.
 
-  3. The caller names the charge. Stripe's idempotency keys exist for the case
-     where the response is lost, and Palinode needs the same property for a
-     different reason: the compensation contract has to point at the charge
-     before the charge exists, or the ledger entry gets edited after it was
-     written.
+  3. The caller names the charge, and the refund finds it by that name.
+
+     Stripe assigns the payment intent id itself, so an agent cannot know it
+     when it writes the compensation contract. The in memory connector let us
+     pretend otherwise and the first real refund failed with "No such
+     payment_intent". The fix is not to edit the contract afterwards, which is
+     the thing the ledger exists to prevent. It is to put the agent's own key
+     in the intent's metadata and have the refund resolve it at reversal time.
+     The contract still says what it said when it was written.
 """
 
 from __future__ import annotations
@@ -131,27 +135,57 @@ async def stripe_charge(
     }
 
 
+async def _resolve(charge_id: str) -> Optional[str]:
+    """Turn the agent's key into the payment intent Stripe actually created.
+
+    Contracts are written before the action runs, so they carry a name the
+    agent chose. Stripe carries its own. This is the join between them, and it
+    happens at reversal time rather than by rewriting history.
+    """
+    if charge_id.startswith("pi_"):
+        return charge_id
+
+    found = await _get(
+        "payment_intents/search"
+        f"?query=metadata%5B%27palinode_key%27%5D%3A%27{charge_id}%27&limit=1"
+    )
+    items = found.get("data") or []
+    if items:
+        return items[0]["id"]
+
+    log.error("no payment intent carries palinode_key %s", charge_id)
+    return None
+
+
 async def stripe_refund(charge_id: str = "", amount_usd: float = 0.0, **_: Any) -> dict:
     """A real test mode refund. Visible in the Stripe dashboard."""
     if not charge_id:
         return {"ok": False, "reason": "no charge id in the compensation contract"}
 
+    intent_id = await _resolve(charge_id)
+    if intent_id is None:
+        return {
+            "ok": False,
+            "reason": f"no stripe charge carries the key {charge_id}",
+        }
+
     refund = await _post(
         "refunds",
         {
-            "payment_intent": charge_id,
+            "payment_intent": intent_id,
             "amount": int(round(amount_usd * 100)) if amount_usd else None,
         },
     )
 
     record = WORLD["charges"].setdefault(
-        charge_id, {"amount_usd": amount_usd, "refunded": 0.0, "live": True}
+        intent_id, {"amount_usd": amount_usd, "refunded": 0.0, "live": True}
     )
     record["refunded"] = refund.get("amount", 0) / 100
     log.info("stripe refund %s for $%.2f", charge_id, record["refunded"])
     return {
         "ok": refund.get("status") in ("succeeded", "pending"),
-        "charge_id": charge_id,
+        "charge_id": intent_id,
+        "palinode_key": charge_id,
         "refunded_usd": record["refunded"],
         "refund_id": refund.get("id"),
         "status": refund.get("status"),
@@ -169,7 +203,11 @@ async def stripe_confirm_refund(charge_id: str = "", **_: Any) -> dict:
     if not charge_id:
         return {"confirmed": False}
 
-    intent = await _get(f"payment_intents/{charge_id}")
+    intent_id = await _resolve(charge_id)
+    if intent_id is None:
+        return {"confirmed": False, "reason": "no charge carries that key"}
+
+    intent = await _get(f"payment_intents/{intent_id}")
     if "error" in intent:
         return {"confirmed": False, "reason": intent["error"].get("message", "")[:120]}
 
@@ -180,7 +218,7 @@ async def stripe_confirm_refund(charge_id: str = "", **_: Any) -> dict:
     if not charges:
         # Newer API versions do not expand charges on the intent. Fall back to
         # listing refunds for it, which is the same question asked differently.
-        refunds = await _get(f"refunds?payment_intent={charge_id}&limit=10")
+        refunds = await _get(f"refunds?payment_intent={intent_id}&limit=10")
         items = refunds.get("data") or []
         refunded = any(r.get("status") == "succeeded" for r in items)
         amount_refunded = sum(r.get("amount", 0) for r in items) / 100
