@@ -109,12 +109,31 @@ The Regret agent plans a reversal in reverse dependency order, runs it, and
 verifies each step actually landed. A refund API returning 200 is treated as a
 claim, not a fact.
 
-### 7. What cannot be undone is disclosed, not hidden
+### 7. Contracts outlive the session that wrote them
+
+The poisoned invoice demo runs in a minute, which makes it easy to assume the
+ledger is a short lived thing holding one request together.
+
+```bash
+curl -X POST $SERVICE/demo/cold-case
+```
+
+That seeds a vendor renewal run dated twenty three days back and reverses it
+today. Four actions, four compensations, nothing failed. The contracts, the
+prior row snapshot and the causal edges were all written down when the actions
+ran, so recovering from a three week old mistake costs exactly what recovering
+from a three minute old one costs.
+
+This is the case that actually happens: a vendor turns out to be fraudulent
+weeks after the invoices cleared, and somebody has to unwind everything done on
+their behalf without a list of what that was.
+
+### 8. What cannot be undone is disclosed, not hidden
 
 Herald handles T3. It writes the disclosure, names who was affected, and puts a
 number on the damage.
 
-### 8. Agents have a blast radius budget, not just permissions
+### 9. Agents have a blast radius budget, not just permissions
 
 An agent may accumulate at most a set amount of unrecoverable exposure per
 hour. When the budget runs out the Warden drops it to propose only mode, with
@@ -221,6 +240,7 @@ uvicorn palinode.api.main:app --app-dir src --reload
 | `POST /sentinel/{run_id}/watch` | hand the run to Sentinel, which reverses if it decides to |
 | `POST /undo` | operator override, `dry_run` to preview the plan |
 | `POST /demo/screen/{loud\|quiet}` | run an invoice past Model Armor |
+| `POST /demo/cold-case` | seed a run dated three weeks back and reverse it |
 | `POST /demo/seed` | replay the scenario |
 | `POST /demo/reset` | clear the run |
 
@@ -316,6 +336,7 @@ src/palinode/
   scenarios/
     poisoned_invoice.py the scenario the demo and the dashboard share
     invoices.py         the two invoices, one caught by Armor and one not
+    cold_case.py        a run from three weeks ago, reversed today
   api/
     main.py             control plane, Cloud Run
     static/index.html   the dashboard
