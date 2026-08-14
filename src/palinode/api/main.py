@@ -76,6 +76,8 @@ async def registry() -> dict:
         "agents": [
             {
                 "name": card.name,
+                "identity": card.identity,
+                "version": card.version,
                 "owner": card.owner,
                 "description": card.description,
                 "mode": card.mode.value,
@@ -106,6 +108,8 @@ async def run_detail(run_id: str) -> dict:
                 "caused_by": a.caused_by,
                 "exposure_usd": a.cost(),
                 "reverses_with": a.contract.tool if a.contract else None,
+                "actor": a.actor,
+                "entry_hash": a.entry_hash[:12],
                 "created_at": a.created_at.isoformat(),
                 "age_days": round(
                     (datetime.now(timezone.utc) - a.created_at).total_seconds() / 86400,
@@ -116,6 +120,20 @@ async def run_detail(run_id: str) -> dict:
         ],
         "outcome": await get_ledger().get_outcome(run_id),
     }
+
+
+@app.get("/runs/{run_id}/verify")
+async def verify_run(run_id: str) -> dict:
+    """Has this audit trail been edited since it was written?
+
+    Recomputes the hash chain. Every entry commits to the one before it, so an
+    action that was changed or removed after the fact shows up here as a break
+    at a named entry rather than as a trail that quietly reads clean.
+    """
+    report = await get_ledger().verify(run_id)
+    if report.length == 0:
+        raise HTTPException(status_code=404, detail="no actions for that run")
+    return report.as_dict()
 
 
 @app.get("/actions/{action_id}/blast-radius")

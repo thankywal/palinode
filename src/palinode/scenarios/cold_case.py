@@ -70,9 +70,11 @@ async def _aged(
     when = when.replace(hour=9, minute=0, second=0, microsecond=0)
     when += timedelta(minutes=minutes_into_the_day)
 
+    card = get_registry().get("renewals")
     record = ActionRecord(
         run_id=RUN_ID,
         agent="renewals",
+        actor=card.identity if card else "",
         tool=tool,
         args=args,
         tier=tier,

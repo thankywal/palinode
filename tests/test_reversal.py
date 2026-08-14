@@ -334,3 +334,65 @@ async def test_cold_case_reverses_newest_first_across_weeks():
     plan = await RegretAgent(run_tool=run_tool).plan(run_id=cold_case.RUN_ID)
     tools = [s.tool for s in plan.steps]
     assert tools == ["stripe_refund", "email_retract", "github_revert", "db_restore"]
+
+
+# ---------------------------------------------------------------- identity
+
+
+def test_workload_id_is_spiffe_shaped():
+    from palinode.identity import workload_id
+
+    assert (
+        workload_id("proj-1", "finance", "payables")
+        == "spiffe://palinode/proj-1/finance/payables"
+    )
+
+
+@pytest.mark.asyncio
+async def test_the_chain_catches_an_edited_action():
+    """An id on a record means nothing if the record can be edited after."""
+    from palinode.identity import verify_chain
+
+    ledger = get_ledger()
+    a = await _record("c1", "db_write", Tier.T0_REVERSIBLE)
+    await _record("c1", "stripe_charge", Tier.T1_COMPENSABLE, parent=a.id)
+    await _record("c1", "wire_transfer", Tier.T3_UNRECOVERABLE)
+
+    assert (await ledger.verify("c1")).intact
+
+    # Someone quietly changes where the money went.
+    a.args = {"beneficiary": "somewhere-else"}
+    report = await ledger.verify("c1")
+    assert not report.intact
+    assert report.broken_at == a.id
+    assert "changed after it was written" in report.reason
+
+
+@pytest.mark.asyncio
+async def test_the_chain_catches_a_removed_action():
+    ledger = get_ledger()
+    a = await _record("c2", "db_write", Tier.T0_REVERSIBLE)
+    b = await _record("c2", "email_send", Tier.T2_SOCIAL, parent=a.id)
+    await _record("c2", "wire_transfer", Tier.T3_UNRECOVERABLE, parent=b.id)
+    assert (await ledger.verify("c2")).intact
+
+    # Delete the middle entry and the trail should not read clean.
+    ledger._mem.pop(b.id)
+    report = await ledger.verify("c2")
+    assert not report.intact
+    assert "removed or reordered" in report.reason
+
+
+def test_registry_versions_on_changed_grants():
+    registry = get_registry()
+    first = registry.register(AgentCard(name="v", owner="t", tools={"db_write"}))
+    assert first.version == 1
+
+    same = registry.register(AgentCard(name="v", owner="t", tools={"db_write"}))
+    assert same.version == 1, "re-registering an unchanged agent is not a new version"
+
+    wider = registry.register(
+        AgentCard(name="v", owner="t", tools={"db_write", "wire_transfer"})
+    )
+    assert wider.version == 2
+    assert len(registry.history("v")) == 2

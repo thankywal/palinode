@@ -91,6 +91,9 @@ class ActionRecord(BaseModel):
     id: str = Field(default_factory=lambda: _new_id("act"))
     run_id: str
     agent: str
+    # SPIFFE shaped principal for the agent that acted. A display name is not
+    # an identity, and an audit trail that only has one cannot answer "who".
+    actor: str = ""
     tool: str
     args: dict[str, Any] = Field(default_factory=dict)
 
@@ -109,6 +112,12 @@ class ActionRecord(BaseModel):
     created_at: datetime = Field(default_factory=_now)
     executed_at: Optional[datetime] = None
     release_at: Optional[datetime] = None  # set while held in cooling off
+
+    # Hash chain over the run. Each entry commits to the one before it, so an
+    # action cannot be edited or removed after the fact without every hash
+    # after it failing to recompute.
+    prev_hash: str = ""
+    entry_hash: str = ""
 
     def cost(self) -> float:
         return self.contract.estimated_exposure_usd if self.contract else 0.0

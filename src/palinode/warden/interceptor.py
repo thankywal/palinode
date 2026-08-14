@@ -148,6 +148,7 @@ class Warden:
         record = ActionRecord(
             run_id="",  # filled in by the caller, which knows the invocation
             agent=agent,
+            actor=card.identity,
             tool=tool,
             args=args,
             tier=tier,

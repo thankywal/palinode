@@ -17,6 +17,7 @@ from typing import Iterable, Optional
 
 from ..config import settings
 from ..types import ActionRecord, ActionState
+from ..identity import GENESIS, entry_hash, verify_chain
 
 log = logging.getLogger("palinode.ledger")
 
@@ -34,6 +35,7 @@ class LedgerStore:
     def __init__(self) -> None:
         self._mem: dict[str, ActionRecord] = {}
         self._outcomes: dict[str, dict] = {}
+        self._tips: dict[str, str] = {}
         self._lock = asyncio.Lock()
         self._client = None
 
@@ -70,6 +72,13 @@ class LedgerStore:
 
     async def append(self, record: ActionRecord) -> ActionRecord:
         async with self._lock:
+            # Chain it, unless it is already chained. append is also used to
+            # rewrite a record whose contract was completed after execution,
+            # and rehashing then would break every entry after it.
+            if not record.entry_hash:
+                record.prev_hash = self._tips.get(record.run_id, GENESIS)
+                record.entry_hash = entry_hash(record, record.prev_hash)
+                self._tips[record.run_id] = record.entry_hash
             self._mem[record.id] = record
         if self._client is not None:
             try:
@@ -195,6 +204,10 @@ class LedgerStore:
             self._outcomes[run_id] = outcome
         return outcome
 
+    async def verify(self, run_id: str):
+        """Recompute the hash chain for a run and say where it breaks."""
+        return verify_chain(await self.by_run(run_id))
+
     async def clear_run(self, run_id: str) -> int:
         """Delete a run outright. Only the demo reset uses this.
 
@@ -207,6 +220,7 @@ class LedgerStore:
             doomed = [rid for rid, r in self._mem.items() if r.run_id == run_id]
             for rid in doomed:
                 self._mem.pop(rid, None)
+            self._tips.pop(run_id, None)
 
         if self._client is None:
             return len(doomed)
