@@ -1,4 +1,4 @@
-"""Control plane API. This is what runs on Cloud Run.
+"""Control plane API and dashboard. This is what runs on Cloud Run.
 
 Small on purpose. The interesting logic belongs to the Warden and to Regret,
 and an HTTP layer that starts making decisions of its own is a layer you end up
@@ -7,9 +7,13 @@ debugging during an incident.
 
 from __future__ import annotations
 
+import asyncio
+from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ..agents.herald import get_herald
@@ -17,15 +21,32 @@ from ..agents.regret import RegretAgent
 from ..agents.verifier import Verifier
 from ..connectors.base import run_tool
 from ..ledger.store import get_ledger
+from ..scenarios import poisoned_invoice
 from ..warden.registry import get_registry
 
 app = FastAPI(title="Palinode", version="0.1.0")
+
+STATIC = Path(__file__).parent / "static"
+if STATIC.is_dir():
+    app.mount("/static", StaticFiles(directory=STATIC), name="static")
+
+# Outcome of the most recent reversal, so the dashboard can show disclosures
+# without holding the request open while Regret works.
+_last_outcome: dict = {}
 
 
 class UndoRequest(BaseModel):
     run_id: str
     from_action: Optional[str] = None
     dry_run: bool = False
+
+
+@app.get("/")
+async def dashboard():
+    index = STATIC / "index.html"
+    if not index.is_file():
+        return {"service": "palinode", "dashboard": "not built"}
+    return FileResponse(index)
 
 
 @app.get("/healthz")
@@ -41,6 +62,7 @@ async def registry() -> dict:
             {
                 "name": card.name,
                 "owner": card.owner,
+                "description": card.description,
                 "mode": card.mode.value,
                 "tools": sorted(card.tools),
                 "budget_usd_per_hour": card.budget_usd_per_hour,
@@ -62,13 +84,17 @@ async def run_detail(run_id: str) -> dict:
                 "id": a.id,
                 "agent": a.agent,
                 "tool": a.tool,
+                "args": a.args,
                 "tier": a.tier.value,
+                "tier_reason": a.tier_reason,
                 "state": a.state.value,
                 "caused_by": a.caused_by,
                 "exposure_usd": a.cost(),
+                "reverses_with": a.contract.tool if a.contract else None,
             }
             for a in actions
         ],
+        "outcome": _last_outcome if _last_outcome.get("run_id") == run_id else None,
     }
 
 
@@ -85,8 +111,32 @@ async def blast_radius(action_id: str) -> dict:
     }
 
 
+@app.post("/demo/seed")
+async def seed() -> dict:
+    """Reset and replay the poisoned invoice scenario."""
+    global _last_outcome
+    _last_outcome = {}
+    await poisoned_invoice.reset()
+    run_id = await poisoned_invoice.run()
+    return {"run_id": run_id}
+
+
+async def _reverse(run_id: str, from_action: Optional[str]) -> None:
+    global _last_outcome
+    regret = RegretAgent(run_tool=run_tool)
+    plan = await regret.plan(run_id=run_id, from_action=from_action)
+    outcome = await regret.execute(plan, verifier=Verifier(run_tool=run_tool))
+
+    herald = get_herald()
+    outcome["disclosures"] = [
+        await herald.disclose(r) for r in await regret.unrecoverable_records(plan)
+    ]
+    outcome["run_id"] = run_id
+    _last_outcome = outcome
+
+
 @app.post("/undo")
-async def undo(request: UndoRequest) -> dict:
+async def undo(request: UndoRequest, background: BackgroundTasks) -> dict:
     regret = RegretAgent(run_tool=run_tool)
     plan = await regret.plan(run_id=request.run_id, from_action=request.from_action)
 
@@ -99,9 +149,14 @@ async def undo(request: UndoRequest) -> dict:
             "exposure_usd": round(plan.exposure_usd, 2),
         }
 
-    outcome = await regret.execute(plan, verifier=Verifier(run_tool=run_tool))
+    # Kicked into the background so the dashboard can watch states change
+    # rather than staring at a spinner until the whole reversal is done.
+    background.add_task(_reverse, request.run_id, request.from_action)
+    return {"started": True, "planned": plan.summary()}
 
-    herald = get_herald()
-    disclosures = [await herald.disclose(r) for r in await regret.unrecoverable_records(plan)]
-    outcome["disclosures"] = disclosures
-    return outcome
+
+@app.post("/undo/sync")
+async def undo_sync(request: UndoRequest) -> dict:
+    """Same thing, but waits. Easier to script against."""
+    await _reverse(request.run_id, request.from_action)
+    return _last_outcome

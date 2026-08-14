@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palinode</title>
+<style>
+  :root {
+    --bg: #0B1020;
+    --panel: rgba(255,255,255,.028);
+    --line: rgba(255,255,255,.13);
+    --text: #E4EBF6;
+    --dim: #8FA0BC;
+    --sky: #38BDF8;
+    --green: #4ADE80;
+    --amber: #FBBF24;
+    --red: #F87171;
+    --violet: #C084FC;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    padding: 22px 26px 34px;
+  }
+  body::before {
+    content:""; position:fixed; inset:0; pointer-events:none;
+    background:
+      radial-gradient(700px circle at 8% -6%, rgba(56,189,248,.15), transparent 60%),
+      radial-gradient(700px circle at 100% 110%, rgba(248,113,113,.11), transparent 60%);
+  }
+  .shell { position:relative; max-width:1560px; margin:0 auto; }
+
+  /* ---------------------------------------------------------- header */
+  header {
+    display:flex; align-items:center; gap:20px;
+    padding-bottom:18px; margin-bottom:20px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand { font-size:27px; font-weight:800; letter-spacing:-.6px; }
+  .kicker {
+    font-size:10.5px; letter-spacing:3.4px; font-weight:700;
+    color:var(--sky); text-transform:uppercase; margin-top:1px;
+  }
+  .runbox { margin-left:6px; padding-left:20px; border-left:1px solid var(--line); }
+  .runbox .k { font-size:10px; letter-spacing:2px; color:var(--dim); text-transform:uppercase; }
+  .runbox .v { font-family:ui-monospace,Menlo,monospace; font-size:13.5px; margin-top:3px; }
+  .spacer { flex:1; }
+
+  button {
+    font:inherit; cursor:pointer; border-radius:9px; transition:.15s;
+    border:1.5px solid var(--line); background:var(--panel); color:var(--text);
+    padding:11px 17px; font-weight:600;
+  }
+  button:hover:not(:disabled) { border-color:rgba(255,255,255,.3); }
+  button:disabled { opacity:.35; cursor:not-allowed; }
+  #undo {
+    background:linear-gradient(180deg,#38BDF8,#0EA5E9);
+    border-color:#7DD3FC; color:#04121F; font-weight:800;
+    font-size:15.5px; padding:12px 26px; letter-spacing:.2px;
+  }
+  #undo:hover:not(:disabled) { filter:brightness(1.09); }
+  #undo.armed { animation:pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(56,189,248,.5); }
+    50%     { box-shadow:0 0 0 13px rgba(56,189,248,0); }
+  }
+
+  /* ------------------------------------------------------------ grid */
+  .grid { display:grid; grid-template-columns:288px 1fr 314px; gap:16px; align-items:start; }
+  .panel { border:1px solid var(--line); border-radius:13px; background:var(--panel); padding:15px 16px; }
+  .panel h2 {
+    font-size:10.5px; letter-spacing:2.6px; font-weight:800;
+    color:var(--sky); text-transform:uppercase; margin-bottom:13px;
+  }
+  .panel + .panel { margin-top:14px; }
+
+  /* -------------------------------------------------------- registry */
+  .agent { border:1px solid var(--line); border-radius:9px; padding:10px 11px; margin-bottom:9px; }
+  .agent:last-child { margin-bottom:0; }
+  .agent .top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .agent .nm { font-weight:700; font-size:14px; }
+  .agent .ow { font-size:11px; color:var(--dim); margin-top:1px; }
+  .mode {
+    font-size:9.5px; font-weight:800; letter-spacing:.8px; text-transform:uppercase;
+    padding:3px 7px; border-radius:5px;
+    background:rgba(74,222,128,.14); color:var(--green); border:1px solid rgba(74,222,128,.4);
+  }
+  .mode.propose_only { background:rgba(251,191,36,.14); color:var(--amber); border-color:rgba(251,191,36,.4); }
+  .bar { height:4px; border-radius:3px; background:rgba(255,255,255,.09); margin-top:9px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--sky); width:0; transition:width .6s; }
+  .bar.hot i { background:var(--red); }
+  .budget { display:flex; justify-content:space-between; font-size:10.5px; color:var(--dim); margin-top:5px; }
+
+  /* ----------------------------------------------------------- graph */
+  .graph { position:relative; min-height:520px; }
+  .empty { color:var(--dim); text-align:center; padding:90px 0; font-size:14px; }
+  .node {
+    position:relative; display:grid; grid-template-columns:34px 1fr auto;
+    gap:13px; align-items:center;
+    border:1.5px solid var(--line); border-radius:11px;
+    padding:12px 14px; margin-bottom:11px;
+    background:rgba(255,255,255,.03);
+    transition:border-color .45s, background .45s, opacity .45s, transform .3s;
+  }
+  .node::before {
+    content:""; position:absolute; left:31px; top:-11px; height:11px; width:1.5px;
+    background:var(--line);
+  }
+  .node:first-child::before { display:none; }
+  .tierbadge {
+    width:34px; height:34px; border-radius:8px; display:grid; place-items:center;
+    font-size:12px; font-weight:800; letter-spacing:.3px;
+    border:1.5px solid; transition:.45s;
+  }
+  .tool { font-weight:700; font-size:15px; font-family:ui-monospace,Menlo,monospace; }
+  .meta { font-size:11.5px; color:var(--dim); margin-top:3px; }
+  .state {
+    font-size:10px; font-weight:800; letter-spacing:1.1px; text-transform:uppercase;
+    padding:5px 10px; border-radius:6px; white-space:nowrap;
+    border:1px solid var(--line); color:var(--dim);
+  }
+
+  .T0 .tierbadge, .T1 .tierbadge { border-color:rgba(74,222,128,.45); color:var(--green); background:rgba(34,197,94,.13); }
+  .T2 .tierbadge { border-color:rgba(251,191,36,.45); color:var(--amber); background:rgba(245,158,11,.13); }
+  .T3 .tierbadge { border-color:rgba(248,113,113,.45); color:var(--red); background:rgba(239,68,68,.13); }
+
+  .node.reversed    { border-color:rgba(74,222,128,.5);  background:rgba(34,197,94,.09); }
+  .node.compensated { border-color:rgba(251,191,36,.5);  background:rgba(245,158,11,.08); }
+  .node.unrecoverable { border-color:rgba(248,113,113,.55); background:rgba(239,68,68,.09); }
+  .node.failed      { border-color:rgba(248,113,113,.5); background:rgba(239,68,68,.07); }
+
+  .node.reversed .state    { color:var(--green); border-color:rgba(74,222,128,.45); background:rgba(34,197,94,.12); }
+  .node.compensated .state { color:var(--amber); border-color:rgba(251,191,36,.45); background:rgba(245,158,11,.12); }
+  .node.unrecoverable .state, .node.failed .state {
+    color:var(--red); border-color:rgba(248,113,113,.45); background:rgba(239,68,68,.12);
+  }
+  .node.reversed .tool, .node.compensated .tool { text-decoration:line-through; opacity:.72; }
+  .node.settling { transform:translateX(5px); }
+
+  /* --------------------------------------------------------- outcome */
+  .stat { display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; }
+  .stat + .stat { border-top:1px solid rgba(255,255,255,.07); }
+  .stat .k { font-size:12px; color:var(--dim); }
+  .stat .v { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .v.green { color:var(--green); } .v.amber { color:var(--amber); } .v.red { color:var(--red); }
+  .disc {
+    border:1px solid rgba(248,113,113,.35); background:rgba(239,68,68,.07);
+    border-radius:9px; padding:12px; margin-top:12px;
+    font-size:12.5px; line-height:1.62; color:#FBD5D5; white-space:pre-wrap;
+  }
+  .disc .hd {
+    font-size:10px; letter-spacing:2px; font-weight:800; text-transform:uppercase;
+    color:var(--red); margin-bottom:7px;
+  }
+  .hint { font-size:11.5px; color:var(--dim); line-height:1.6; margin-top:11px; }
+  .log {
+    font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--dim);
+    max-height:150px; overflow-y:auto; line-height:1.85;
+  }
+  .log b { color:var(--sky); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div>
+      <div class="kicker">Autonomous Agent Remediation</div>
+      <div class="brand">Palinode</div>
+    </div>
+    <div class="runbox">
+      <div class="k">Run</div>
+      <div class="v" id="runid">no run</div>
+    </div>
+    <div class="runbox">
+      <div class="k">Ledger</div>
+      <div class="v" id="ledger">memory</div>
+    </div>
+    <div class="spacer"></div>
+    <button id="seed">Run the fleet</button>
+    <button id="preview" disabled>Preview undo</button>
+    <button id="undo" disabled>&#8984;Z &nbsp;Undo</button>
+  </header>
+
+  <div class="grid">
+
+    <div>
+      <div class="panel">
+        <h2>Agent Cataloging</h2>
+        <div id="agents"><div class="hint">Nothing registered yet.</div></div>
+      </div>
+      <div class="panel">
+        <h2>Blast Radius</h2>
+        <div class="hint">Undoing one action is never one action. Regret walks
+        everything downstream before it touches anything.</div>
+        <div class="log" id="log" style="margin-top:11px"></div>
+      </div>
+    </div>
+
+    <div class="panel graph">
+      <h2>Causality Ledger</h2>
+      <div id="graph"><div class="empty">Run the fleet to see actions land.</div></div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Recovery</h2>
+        <div class="stat"><span class="k">Reversed</span><span class="v green" id="s-rev">0</span></div>
+        <div class="stat"><span class="k">Compensated</span><span class="v amber" id="s-comp">0</span></div>
+        <div class="stat"><span class="k">Unrecoverable</span><span class="v red" id="s-unrec">0</span></div>
+        <div class="stat"><span class="k">Exposure</span><span class="v red" id="s-exp">$0</span></div>
+      </div>
+      <div class="panel" id="disc-panel" style="display:none">
+        <h2>Disclosure</h2>
+        <div class="disc"><div class="hd">Drafted by Herald</div><span id="disc"></span></div>
+      </div>
+      <div class="panel">
+        <h2>Tiers</h2>
+        <div class="hint">
+          <b style="color:var(--green)">T0</b> an exact inverse exists<br>
+          <b style="color:var(--green)">T1</b> returnable through an API<br>
+          <b style="color:var(--amber)">T2</b> a person already saw it<br>
+          <b style="color:var(--red)">T3</b> nothing brings this back
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const api = (path, opts) => fetch(path, opts).then(r => r.json());
+
+let runId = null;
+let known = new Map();   // action id -> last state we rendered
+let polling = null;
+let queue = [];          // observed state changes waiting to be shown
+let draining = false;
+
+const STATE_WORD = {
+  executed: "executed", pending: "pending", held: "held",
+  reversed: "reversed", compensated: "compensated",
+  unrecoverable: "unrecoverable", failed: "failed",
+};
+
+function log(msg) {
+  const el = $("log");
+  el.innerHTML = `<div>${msg}</div>` + el.innerHTML;
+}
+
+// ---------------------------------------------------------------- render
+
+function nodeHtml(a) {
+  const cls = ["node", a.tier, a.state].join(" ");
+  const rev = a.reverses_with ? `reverses with ${a.reverses_with}` : "no reversal exists";
+  const cost = a.exposure_usd ? ` &middot; $${a.exposure_usd.toLocaleString()}` : "";
+  return `<div class="${cls}" id="n-${a.id}">
+    <div class="tierbadge">${a.tier}</div>
+    <div>
+      <div class="tool">${a.tool}</div>
+      <div class="meta">${a.agent} &middot; ${rev}${cost}</div>
+    </div>
+    <div class="state">${STATE_WORD[a.state] || a.state}</div>
+  </div>`;
+}
+
+function paint(actions) {
+  $("graph").innerHTML = actions.map(nodeHtml).join("");
+}
+
+function applyState(a) {
+  const el = $(`n-${a.id}`);
+  if (!el) return;
+  el.className = ["node", a.tier, a.state].join(" ");
+  el.querySelector(".state").textContent = STATE_WORD[a.state] || a.state;
+  el.classList.add("settling");
+  setTimeout(() => el.classList.remove("settling"), 300);
+}
+
+// The data is real and arrives as fast as the connectors return it. The stagger
+// here is presentation only, so a human can follow which action came back in
+// which order instead of watching five rows change at once.
+function drain() {
+  if (draining || !queue.length) return;
+  draining = true;
+  const next = queue.shift();
+  applyState(next);
+  log(`<b>${next.tool}</b> ${STATE_WORD[next.state]}`);
+  setTimeout(() => { draining = false; drain(); }, 420);
+}
+
+function stats(actions, outcome) {
+  const count = (s) => actions.filter(a => a.state === s).length;
+  $("s-rev").textContent = count("reversed");
+  $("s-comp").textContent = count("compensated");
+  $("s-unrec").textContent = count("unrecoverable");
+  const exp = actions.filter(a => a.state === "unrecoverable")
+                     .reduce((t, a) => t + (a.exposure_usd || 0), 0);
+  $("s-exp").textContent = "$" + exp.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+  if (outcome && outcome.disclosures && outcome.disclosures.length) {
+    $("disc-panel").style.display = "";
+    $("disc").textContent = outcome.disclosures[0].disclosure;
+  }
+}
+
+async function refreshRegistry() {
+  const { agents } = await api("/registry");
+  $("agents").innerHTML = agents.map(a => {
+    const hot = a.mode !== "autonomous";
+    return `<div class="agent">
+      <div class="top">
+        <div><div class="nm">${a.name}</div><div class="ow">${a.owner}</div></div>
+        <div class="mode ${a.mode}">${a.mode.replace("_", " ")}</div>
+      </div>
+      <div class="bar ${hot ? "hot" : ""}"><i style="width:${hot ? 100 : 4}%"></i></div>
+      <div class="budget"><span>blast radius budget</span>
+        <span>$${a.budget_usd_per_hour.toLocaleString()}/hr</span></div>
+    </div>`;
+  }).join("");
+}
+
+// ------------------------------------------------------------------ poll
+
+async function tick() {
+  if (!runId) return;
+  let data;
+  try { data = await api(`/runs/${runId}`); } catch { return; }
+  if (!data.actions) return;
+
+  for (const a of data.actions) {
+    const before = known.get(a.id);
+    if (before === undefined) { known.set(a.id, a.state); continue; }
+    if (before !== a.state) { known.set(a.id, a.state); queue.push(a); }
+  }
+  drain();
+  stats(data.actions, data.outcome);
+  await refreshRegistry();
+}
+
+// --------------------------------------------------------------- actions
+
+$("seed").onclick = async () => {
+  $("seed").disabled = true;
+  $("graph").innerHTML = `<div class="empty">the fleet is working</div>`;
+  $("log").innerHTML = "";
+  $("disc-panel").style.display = "none";
+  known = new Map(); queue = [];
+
+  const { run_id } = await api("/demo/seed", { method: "POST" });
+  runId = run_id;
+  $("runid").textContent = run_id;
+
+  const data = await api(`/runs/${runId}`);
+  data.actions.forEach(a => known.set(a.id, a.state));
+  paint(data.actions);
+  stats(data.actions, null);
+  await refreshRegistry();
+
+  data.actions.forEach(a => log(`<b>${a.tool}</b> ${a.tier} ${STATE_WORD[a.state]}`));
+
+  $("seed").disabled = false;
+  $("preview").disabled = false;
+  $("undo").disabled = false;
+  $("undo").classList.add("armed");
+  if (polling) clearInterval(polling);
+  polling = setInterval(tick, 350);
+};
+
+$("preview").onclick = async () => {
+  const plan = await api("/undo", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ run_id: runId, dry_run: true }),
+  });
+  log(`<b>dry run</b> ${plan.summary}`);
+  alert(
+    `Reversal plan\n\n${plan.summary}\n\n` +
+    plan.steps.map((s, i) => `${i + 1}. ${s.tool}`).join("\n") +
+    (plan.unrecoverable.length ? `\n\nCannot be reversed: ${plan.unrecoverable.length}` : "")
+  );
+};
+
+$("undo").onclick = async () => {
+  $("undo").disabled = true;
+  $("undo").classList.remove("armed");
+  $("preview").disabled = true;
+  log(`<b>undo</b> requested`);
+  await api("/undo", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ run_id: runId }),
+  });
+};
+
+// Pick up a run that is already in the ledger, so a refresh does not lose the
+// view and so the dashboard is never empty when someone opens it mid incident.
+async function resume() {
+  await refreshRegistry();
+  try {
+    const data = await api("/runs/run_poisoned_invoice");
+    if (!data.actions) return;
+    runId = data.run_id;
+    $("runid").textContent = runId;
+    data.actions.forEach(a => known.set(a.id, a.state));
+    paint(data.actions);
+    stats(data.actions, data.outcome);
+    data.actions.forEach(a => log(`<b>${a.tool}</b> ${a.tier} ${STATE_WORD[a.state]}`));
+
+    const settled = data.actions.every(a => a.state !== "executed");
+    $("preview").disabled = settled;
+    $("undo").disabled = settled;
+    if (!settled) $("undo").classList.add("armed");
+    if (polling) clearInterval(polling);
+    polling = setInterval(tick, 350);
+  } catch { /* nothing to resume, that is fine */ }
+}
+
+resume();
+</script>
+</body>
+</html>
