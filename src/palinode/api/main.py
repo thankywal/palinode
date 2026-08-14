@@ -38,9 +38,10 @@ STATIC = Path(__file__).parent / "static"
 if STATIC.is_dir():
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
-# Outcome of the most recent reversal, so the dashboard can show disclosures
-# without holding the request open while Regret works.
-_last_outcome: dict = {}
+# Reversal outcomes live in the ledger, not in this process. Cloud Run runs
+# more than one container and the dashboard has no idea which one it is talking
+# to, so a module global here means the disclosure shows up for some viewers
+# and not others.
 
 
 class UndoRequest(BaseModel):
@@ -57,9 +58,15 @@ async def dashboard():
     return FileResponse(index)
 
 
-@app.get("/healthz")
-async def healthz() -> dict:
-    return {"ok": True}
+@app.get("/status")
+async def status() -> dict:
+    """Liveness.
+
+    Not /healthz. The Google frontend answers that path itself on run.app
+    domains and the request never reaches the container, which looks exactly
+    like the service being down.
+    """
+    return {"ok": True, "service": "palinode"}
 
 
 @app.get("/registry")
@@ -102,7 +109,7 @@ async def run_detail(run_id: str) -> dict:
             }
             for a in actions
         ],
-        "outcome": _last_outcome if _last_outcome.get("run_id") == run_id else None,
+        "outcome": await get_ledger().get_outcome(run_id),
     }
 
 
@@ -122,8 +129,7 @@ async def blast_radius(action_id: str) -> dict:
 @app.post("/demo/reset")
 async def reset() -> dict:
     """Clear the world and the ledger. Puts the dashboard back to empty."""
-    global _last_outcome
-    _last_outcome = {}
+    await get_ledger().clear_outcome(poisoned_invoice.RUN_ID)
     await poisoned_invoice.reset()
     return {"ok": True}
 
@@ -137,15 +143,13 @@ async def screen(invoice_key: str) -> dict:
 @app.post("/demo/seed")
 async def seed() -> dict:
     """Reset and replay the poisoned invoice scenario."""
-    global _last_outcome
-    _last_outcome = {}
+    await get_ledger().clear_outcome(poisoned_invoice.RUN_ID)
     await poisoned_invoice.reset()
     run_id = await poisoned_invoice.run()
     return {"run_id": run_id}
 
 
 async def _reverse(run_id: str, from_action: Optional[str]) -> None:
-    global _last_outcome
     regret = RegretAgent(run_tool=run_tool)
     plan = await regret.plan(run_id=run_id, from_action=from_action)
     outcome = await regret.execute(plan, verifier=Verifier(run_tool=run_tool))
@@ -155,7 +159,8 @@ async def _reverse(run_id: str, from_action: Optional[str]) -> None:
         await herald.disclose(r) for r in await regret.unrecoverable_records(plan)
     ]
     outcome["run_id"] = run_id
-    _last_outcome = outcome
+    outcome["triggered_by"] = "operator"
+    await get_ledger().save_outcome(run_id, outcome)
 
 
 @app.post("/undo")
@@ -182,7 +187,7 @@ async def undo(request: UndoRequest, background: BackgroundTasks) -> dict:
 async def undo_sync(request: UndoRequest) -> dict:
     """Same thing, but waits. Easier to script against."""
     await _reverse(request.run_id, request.from_action)
-    return _last_outcome
+    return await get_ledger().get_outcome(request.run_id) or {}
 
 
 def _sentinel() -> Sentinel:
@@ -212,10 +217,9 @@ async def sentinel_assess(run_id: str) -> dict:
 
 
 async def _sentinel_watch(run_id: str) -> None:
-    global _last_outcome
     outcome = await _sentinel().watch(run_id, verifier=Verifier(run_tool=run_tool))
     if outcome.get("triggered"):
-        _last_outcome = outcome
+        await get_ledger().save_outcome(run_id, outcome)
 
 
 @app.post("/sentinel/{run_id}/watch")

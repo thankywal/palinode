@@ -21,6 +21,7 @@ from ..types import ActionRecord, ActionState
 log = logging.getLogger("palinode.ledger")
 
 COLLECTION = "palinode_actions"
+OUTCOMES = "palinode_outcomes"
 
 
 class LedgerStore:
@@ -32,6 +33,7 @@ class LedgerStore:
 
     def __init__(self) -> None:
         self._mem: dict[str, ActionRecord] = {}
+        self._outcomes: dict[str, dict] = {}
         self._lock = asyncio.Lock()
         self._client = None
 
@@ -156,6 +158,51 @@ class LedgerStore:
                 and r.state
                 in (ActionState.EXECUTED, ActionState.UNRECOVERABLE, ActionState.COMPENSATED)
             )
+
+    # --------------------------------------------------------- run outcomes
+
+    async def save_outcome(self, run_id: str, outcome: dict) -> None:
+        """Persist what a reversal did.
+
+        This lived in a module global until Cloud Run scaled past one instance
+        and the dashboard started asking a container that had never heard of
+        the reversal. Recovery results are exactly the thing that has to
+        outlive the process that produced them.
+        """
+        async with self._lock:
+            self._outcomes[run_id] = outcome
+        if self._client is not None:
+            try:
+                await self._client.collection(OUTCOMES).document(run_id).set(outcome)
+            except Exception as exc:  # noqa: BLE001
+                self._demote("save_outcome", exc)
+
+    async def get_outcome(self, run_id: str) -> Optional[dict]:
+        async with self._lock:
+            cached = self._outcomes.get(run_id)
+        if cached is not None or self._client is None:
+            return cached
+
+        try:
+            snap = await self._client.collection(OUTCOMES).document(run_id).get()
+        except Exception as exc:  # noqa: BLE001
+            self._demote("get_outcome", exc)
+            return None
+        if not snap.exists:
+            return None
+        outcome = snap.to_dict()
+        async with self._lock:
+            self._outcomes[run_id] = outcome
+        return outcome
+
+    async def clear_outcome(self, run_id: str) -> None:
+        async with self._lock:
+            self._outcomes.pop(run_id, None)
+        if self._client is not None:
+            try:
+                await self._client.collection(OUTCOMES).document(run_id).delete()
+            except Exception as exc:  # noqa: BLE001
+                self._demote("clear_outcome", exc)
 
     # ------------------------------------------------------------ the graph
 
