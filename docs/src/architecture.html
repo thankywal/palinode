@@ -1,0 +1,143 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:800px}
+body{background:#0B1020;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#fff;padding:30px 34px}
+.hdr{display:flex;align-items:baseline;gap:14px;margin-bottom:16px}
+.hdr h1{font-size:27px;font-weight:800;letter-spacing:-.4px}
+.hdr span{font-size:14px;color:#7DD3FC;letter-spacing:2.6px;font-weight:700}
+.grid{display:grid;grid-template-columns:255px 1fr 255px;gap:15px;height:702px}
+.col{display:flex;flex-direction:column;gap:12px}
+.box{border:2px solid rgba(255,255,255,.13);border-radius:11px;padding:12px 14px;background:rgba(255,255,255,.028)}
+.t{font-size:11px;letter-spacing:2.2px;font-weight:800;color:#7DD3FC;margin-bottom:9px}
+.agent{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.14);border-radius:8px;padding:8px 11px;font-size:14px;font-weight:600;margin-bottom:7px;color:#E4EBF6}
+.agent small{display:block;font-size:11.5px;color:#8FA0BC;font-weight:400;margin-top:2px}
+.warden{border:2.5px solid #38BDF8;background:rgba(56,189,248,.1);border-radius:12px;padding:14px 16px}
+.warden .nm{font-size:22px;font-weight:800;color:#7DD3FC;letter-spacing:.4px}
+.warden .sb{font-size:12.5px;color:#9FB4CE;margin-top:2px}
+.row{display:flex;gap:8px;margin-top:11px}
+.pill{flex:1;background:rgba(56,189,248,.13);border:1.5px solid rgba(56,189,248,.38);border-radius:7px;padding:7px 8px;font-size:11.5px;font-weight:700;color:#BAE6FD;text-align:center;line-height:1.3}
+.core{border:2.5px solid rgba(168,85,247,.5);background:rgba(168,85,247,.08);border-radius:12px;padding:13px 15px}
+.core .nm{font-size:20px;font-weight:800;color:#D8B4FE}
+.core .sb{font-size:12.5px;color:#A99CC4;margin-top:2px;line-height:1.4}
+.tiers{display:flex;gap:7px;margin-top:11px}
+.tier{flex:1;border-radius:7px;padding:8px 5px;text-align:center;font-size:10.5px;font-weight:800;letter-spacing:.3px}
+.T0,.T1{background:rgba(34,197,94,.16);border:1.5px solid rgba(74,222,128,.5);color:#4ADE80}
+.T2{background:rgba(245,158,11,.16);border:1.5px solid rgba(251,191,36,.5);color:#FBBF24}
+.T3{background:rgba(239,68,68,.16);border:1.5px solid rgba(248,113,113,.5);color:#F87171}
+.sys{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.s{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.14);border-radius:7px;padding:8px;font-size:12.5px;font-weight:600;text-align:center;color:#E4EBF6}
+.gcp{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.14);border-radius:7px;padding:8px 10px;font-size:12.5px;font-weight:600;margin-bottom:6px;color:#E4EBF6;display:flex;justify-content:space-between;align-items:center}
+.gcp em{font-style:normal;font-size:10.5px;color:#8FA0BC;font-weight:400}
+.arw{text-align:center;color:#38BDF8;font-size:19px;line-height:1;margin:1px 0}
+.ftr{margin-top:auto;border-top:1.5px solid rgba(255,255,255,.1);padding-top:9px;font-size:11.5px;color:#8FA0BC;text-align:center}
+</style></head><body>
+<div class="hdr"><h1>Palinode</h1><span>SYSTEM ARCHITECTURE</span></div>
+<div class="grid">
+
+  <div class="col">
+    <div class="box" style="flex:0 0 auto">
+      <div class="t">SUPERVISED FLEET</div>
+      <div class="agent">Sourcing Agent<small>ADK / Gemini 3.5 Flash</small></div>
+      <div class="agent">Invoice Agent<small>ADK / Gemini 3.5 Flash</small></div>
+      <div class="agent" style="margin-bottom:0">Payables Agent<small>ADK / Gemini 3.5 Flash</small></div>
+    </div>
+    <div class="box" style="flex:1">
+      <div class="t">AGENT CATALOGING</div>
+      <div class="gcp">Identity <em>registry</em></div>
+      <div class="gcp">Tool grants <em>scoped</em></div>
+      <div class="gcp">Blast radius budget <em>$/hr</em></div>
+      <div class="gcp" style="margin-bottom:0">Runtime mode <em>auto / propose</em></div>
+      <div style="margin-top:11px;font-size:11.5px;color:#8FA0BC;line-height:1.5">Budget exhausted, Warden drops the agent to propose only without human input.</div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="warden">
+      <div class="nm">WARDEN</div>
+      <div class="sb">Every tool call is intercepted before it reaches the world</div>
+      <div class="row">
+        <div class="pill">Reversibility<br>classifier<br><span style="color:#4ADE80">Gemini 3.5 Flash</span></div>
+        <div class="pill">Compensation<br>contract<br><span style="color:#38BDF8">required</span></div>
+        <div class="pill">Model Armor<br>screening<br><span style="color:#4ADE80">live</span></div>
+      </div>
+      <div class="tiers">
+        <div class="tier T0">T0 REVERSIBLE</div>
+        <div class="tier T1">T1 COMPENSABLE</div>
+        <div class="tier T2">T2 SOCIAL</div>
+        <div class="tier T3">T3 UNRECOVERABLE</div>
+      </div>
+    </div>
+
+    <div class="arw">&#8595;</div>
+
+    <div class="box" style="flex:0 0 auto">
+      <div class="t">SYSTEMS OF RECORD <span style="color:#8FA0BC;font-weight:400;letter-spacing:0">&nbsp;simulated</span></div>
+      <div class="sys">
+        <div class="s">Gmail</div><div class="s">Stripe</div>
+        <div class="s">GitHub</div><div class="s">Postgres</div>
+      </div>
+      <div class="s" style="margin-top:7px">Slack</div>
+      <div style="margin-top:9px;font-size:11px;color:#8FA0BC;line-height:1.5">
+        In memory behind the real tool names. A real client replaces the body
+        of each connector and nothing else, because Warden only reads names
+        and contracts.
+      </div>
+    </div>
+
+    <div class="box" style="flex:0 0 auto;border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.07)">
+      <div class="t" style="color:#C084FC">SENTINEL &nbsp;<span style="color:#8FA0BC;font-weight:400;letter-spacing:0">no human in the loop</span></div>
+      <div style="font-size:12px;color:#C7D3E4;line-height:1.55">
+        Reads the ledger. Unknown beneficiary, no reversal path, an
+        irreversible action at the tail, and a Gemini review of the shape of
+        the run. Any two clears the threshold and it calls Regret itself.
+      </div>
+    </div>
+
+    <div class="arw">&#8595;&nbsp;&nbsp;triggers</div>
+
+    <div class="core" style="flex:1">
+      <div class="nm">REGRET</div>
+      <div class="sb">Plans the reversal in reverse dependency order, runs safe steps in parallel, escalates what it cannot fix</div>
+      <div class="row" style="margin-top:12px">
+        <div class="pill" style="background:rgba(168,85,247,.13);border-color:rgba(168,85,247,.42);color:#E9D5FF">VERIFIER<br><span style="font-weight:400;font-size:10.5px">confirms each<br>compensation landed</span></div>
+        <div class="pill" style="background:rgba(248,113,113,.13);border-color:rgba(248,113,113,.42);color:#FECACA">HERALD<br><span style="font-weight:400;font-size:10.5px">discloses T3 damage,<br>reports exposure</span></div>
+      </div>
+      <div style="margin-top:13px;font-size:12px;color:#8FA0BC;line-height:1.6;border-top:1.5px solid rgba(168,85,247,.25);padding-top:11px">
+        Runs with no human in the loop. Every compensation was written at the moment the original action was authorised, not reconstructed after the incident.
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="box" style="flex:0 0 auto">
+      <div class="t">ASYNC CONTEXT <span style="color:#4ADE80;font-weight:400;letter-spacing:0">&nbsp;live</span></div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px">Causality Ledger</div>
+      <div style="font-size:12px;color:#8FA0BC;line-height:1.5;margin-bottom:10px">Append only graph of which action caused which, across agents and across days.</div>
+      <div class="gcp">Firestore <em>graph</em></div>
+      <div class="gcp">Cloud SQL <em>snapshots</em></div>
+      <div class="gcp">Pub/Sub <em>non blocking</em></div>
+      <div class="gcp" style="margin-bottom:0">Hash chained <em>tamper evident</em></div>
+      <div style="margin-top:10px;font-size:11.5px;color:#8FA0BC;line-height:1.5">
+        Every entry names a SPIFFE actor and commits to the one before it.
+      </div>
+    </div>
+
+    <div class="box" style="flex:0 0 auto">
+      <div class="t">DATA SOVEREIGNTY <span style="color:#4ADE80;font-weight:400;letter-spacing:0">&nbsp;live</span></div>
+      <div style="font-size:12.5px;color:#C7D3E4;line-height:1.55">Regulated tenants run the tier classifier on <b style="color:#7DD3FC">Gemma</b> in their own VPC. No action metadata leaves the boundary.</div>
+    </div>
+
+    <div class="box" style="flex:1">
+      <div class="t">BLAST RADIUS</div>
+      <div style="font-size:12.5px;color:#C7D3E4;line-height:1.55;margin-bottom:12px">Undoing one action is never one action. Regret walks the transitive closure first.</div>
+      <div style="font-size:11.5px;color:#8FA0BC;line-height:1.9;font-family:ui-monospace,Menlo,monospace">
+        email #4<br>
+        &nbsp;&#8627; reply&nbsp;&#8594;&nbsp;CRM write<br>
+        &nbsp;&nbsp;&nbsp;&#8627; invoice&nbsp;&#8594;&nbsp;<span style="color:#F87171">wire</span>
+      </div>
+      <div class="ftr" style="text-align:left">4 actions reversed<br><span style="color:#F87171">1 unrecoverable, $4,200</span></div>
+    </div>
+  </div>
+</div>
+</body></html>

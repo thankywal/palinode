@@ -55,6 +55,28 @@ The wire does not come back. Instead of pretending, the system writes the disclo
 
 Each agent carries a SPIFFE shaped identity, the same shape Google's Agent Identity issues. Entries are hash chained per run, so an action that was changed or removed after the fact shows up as a break at a named entry instead of a trail that quietly reads clean.
 
+### What is real and what is simulated
+
+Worth being exact, because the demo shows money moving.
+
+**Real:** Cloud Run, Firestore, Model Armor, Gemini 3.5 Flash on Vertex AI,
+Cloud Trace, and the ADK integration. Every verdict, span and document in the
+video came out of those services.
+
+**Simulated:** the five systems of record. Gmail, Stripe, GitHub, Postgres and
+Slack are in memory implementations sitting behind the real tool names. No
+Stripe key, no Slack token, no mailbox.
+
+That boundary is deliberate rather than unfinished. The interesting behaviour
+is in deciding what can be taken back and executing it in the right order, and
+that logic never learns which client it is talking to. The Warden reads tool
+names and compensation contracts, so a real client replaces the body of one
+function in `connectors/base.py` and nothing else moves.
+
+It does mean the reversal in the demo is a real reversal of a simulated world,
+not a real reversal of a real one, and I would rather say that than let the
+colours imply otherwise.
+
 ## How I built it
 
 Five ADK agents on Cloud Run.
