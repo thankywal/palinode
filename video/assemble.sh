@@ -13,6 +13,11 @@ cd "$(dirname "$0")"
 
 OUT=out
 WORK=$OUT/work
+
+# Wiped every run. The concat step globs this directory, so a clip left behind
+# from a previous cut with different segment names silently ends up in the
+# film, which is a confusing thing to debug from the runtime alone.
+rm -rf "$WORK"
 mkdir -p "$WORK"
 
 echo "rendering title cards"
@@ -24,10 +29,10 @@ chapter() {
     --props="{\"index\":\"$1\",\"title\":\"$2\",\"subtitle\":\"$3\",\"accent\":\"$4\"}"
 }
 
-chapter "01" "The fleet does its job" \
-  "Three ADK agents, five real actions, one poisoned invoice." "#38BDF8"
-chapter "02" "Then somebody hits undo" \
-  "Planned in reverse dependency order, executed with no human in the loop." "#F87171"
+chapter "01" "Model Armor catches one of these" \
+  "Both invoices send the money to the same attacker. Only one is a prompt injection." "#38BDF8"
+chapter "02" "Nobody is watching" \
+  "The fleet acts on the invoice that passed. Sentinel reverses it without being asked." "#C084FC"
 chapter "03" "What could not be undone" \
   "A settled wire does not come back. Palinode says so instead of pretending." "#FBBF24"
 
@@ -42,9 +47,9 @@ norm() {
 
 norm "$OUT/intro.mp4"                  "00-intro"
 norm "$OUT/ch01.mp4"                   "01-ch"
-norm "$OUT/capture/seg-01-fleet.webm"  "02-fleet"
+norm "$OUT/capture/seg-01-armor.webm"  "02-armor"
 norm "$OUT/ch02.mp4"                   "03-ch"
-norm "$OUT/capture/seg-02-undo.webm"   "04-undo"
+norm "$OUT/capture/seg-02-sentinel.webm" "04-sentinel"
 norm "$OUT/ch03.mp4"                   "05-ch"
 norm "$OUT/capture/seg-03-disclosure.webm" "06-disclosure"
 norm "$OUT/outro.mp4"                  "07-outro"

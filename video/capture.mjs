@@ -3,19 +3,21 @@
  *
  * This is a capture, not a reconstruction. A real browser clicks the real
  * buttons, the requests hit the real API, and the reversal that shows up on
- * screen is the one Regret actually planned and ran. Nothing here is animated.
+ * screen is the one Sentinel actually decided on and Regret actually ran.
+ * Nothing in the captured segments is animated.
  *
- *   node capture.mjs
+ *   PALINODE_URL=https://palinode-...run.app node capture.mjs
  *
- * Expects the control plane on http://localhost:8099. Writes 1920x1080 webm
- * segments into out/capture, which assemble.sh converts and stitches.
+ * Defaults to the deployed service so the address bar in the footage is itself
+ * the proof of deployment. Point it at localhost to iterate faster.
  */
 
 import {chromium} from 'playwright';
 import {mkdirSync, readdirSync, renameSync, statSync} from 'node:fs';
 import {join} from 'node:path';
 
-const BASE = process.env.PALINODE_URL ?? 'http://localhost:8099';
+const BASE =
+  process.env.PALINODE_URL ?? 'https://palinode-173485225974.us-central1.run.app';
 const OUT = 'out/capture';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -58,44 +60,45 @@ async function segment(name, steps) {
 async function main() {
   console.log('recording against', BASE);
 
-  // Start from an empty ledger so the first segment opens on an empty board.
   await fetch(`${BASE}/demo/reset`, {method: 'POST'});
 
-  // 01. The fleet does its job. Five actions land, and wire_transfer is
-  //     already red before anything has gone wrong, because the tier is
-  //     decided before the action runs.
-  await segment('01-fleet', async (page) => {
-    await wait(1800);
-    await page.click('#seed');
-    await page.waitForSelector('.node', {timeout: 15000});
-    await wait(5200);
-  });
-
-  // 02. The plan, then the undo. Preview first so it is visible that the
-  //     reversal is planned rather than improvised.
-  await segment('02-undo', async (page) => {
-    await page.waitForSelector('.node');
-    await wait(1200);
-    await page.click('#preview');
-    await page.waitForSelector('.step', {timeout: 10000});
-    await wait(4500);
-    await page.click('#undo');
-    await page.waitForFunction(
-      () => document.querySelectorAll('.node.reversed, .node.compensated').length >= 4,
-      {timeout: 30000}
-    );
-    await wait(5500);
-  });
-
-  // 03. What could not be undone.
-  await segment('03-disclosure', async (page) => {
-    await page.waitForSelector('#disc-panel');
-    await wait(1000);
-    await page.evaluate(() => {
-      const el = document.getElementById('disc-panel');
-      if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'});
-    });
+  // 01. Model Armor. One invoice is a prompt injection and gets caught at HIGH
+  //     confidence. The other has the bank details changed and no injection in
+  //     it at all, so there is nothing for a prompt filter to match. Both put
+  //     the money in the same account.
+  await segment('01-armor', async (page) => {
+    await wait(1400);
+    await page.click('#screen');
+    await page.waitForSelector('.inv', {timeout: 40000});
     await wait(6000);
+  });
+
+  // 02. The fleet acts on the invoice that passed, and Sentinel reverses it
+  //     without being asked. One continuous shot, because the point is that
+  //     nobody intervened between the two halves.
+  await segment('02-sentinel', async (page) => {
+    await page.click('#screen');
+    await page.waitForSelector('.inv', {timeout: 40000});
+    await wait(700);
+
+    await page.click('#seed');
+    await page.waitForSelector('.node', {timeout: 40000});
+    await page.waitForSelector('#sentinel-panel:not([style*="display: none"])', {
+      timeout: 60000,
+    });
+    await wait(2500);
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll('.node.reversed, .node.compensated').length >= 4,
+      {timeout: 120000}
+    );
+    await wait(5000);
+  });
+
+  // 03. What could not be undone, and what the system says about it.
+  await segment('03-disclosure', async (page) => {
+    await page.waitForSelector('.node.unrecoverable', {timeout: 30000});
+    await wait(7000);
   });
 
   console.log('done');

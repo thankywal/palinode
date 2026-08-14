@@ -14,19 +14,21 @@ markers, and the closing numbers. Those are titles, and titles have always been
 allowed to be titles.
 
 ```
-0:00  Intro          rendered      the palinode hook, 8s
-0:08  Chapter 01     rendered      2s
-0:10  Screen capture live          the fleet does its job
-0:55  Chapter 02     rendered      2s
-0:57  Screen capture live          the reveal and the undo
-1:50  Chapter 03     rendered      2s
-1:52  Screen capture live          what could not be undone
-2:25  Chapter 04     rendered      2s
-2:27  Screen capture live          architecture and Cloud Run console
-3:30  Outro          rendered      7s
+0:00  Intro           rendered   the palinode hook, 8s
+0:08  Chapter 01      rendered   2s
+0:10  Screen capture  live       Model Armor: one invoice caught, one not
+0:20  Chapter 02      rendered   2s
+0:22  Screen capture  live       the fleet acts, Sentinel reverses it unasked
+0:40  Chapter 03      rendered   2s
+0:42  Screen capture  live       what could not be undone
+0:51  Outro           rendered   7s
 ```
 
-Four minutes is the hard cap. The screen capture is roughly three of them.
+Current cut runs 58 seconds. Four minutes is the hard cap, so there is room for
+narration and for the Cloud Run console segment, which still has to be filmed.
+
+The capture records against the deployed service by default, so the address bar
+in the footage is itself part of the proof of deployment.
 
 ## Build the whole cut
 
@@ -34,10 +36,11 @@ Four minutes is the hard cap. The screen capture is roughly three of them.
 npm install
 npx playwright install chromium
 
-# control plane in another shell
-cd .. && uvicorn palinode.api.main:app --app-dir src --port 8099
+node capture.mjs        # records the deployed dashboard, three segments
 
-node capture.mjs        # records the real dashboard, three segments
+# or against a local control plane
+# cd .. && uvicorn palinode.api.main:app --app-dir src --port 8099
+# PALINODE_URL=http://localhost:8099 node capture.mjs
 ./assemble.sh           # renders the cards and stitches everything
 open out/palinode-demo.mp4
 ```
@@ -64,14 +67,13 @@ npx remotion render Chapter out/ch01.mp4 --props='{
 }'
 ```
 
-Suggested chapters:
+Chapters in the current cut, set in `assemble.sh`:
 
 | Index | Title | Accent |
 |-------|-------|--------|
-| 01 | The fleet does its job | `#38BDF8` sky |
-| 02 | The invoice was poisoned | `#F87171` red |
+| 01 | Model Armor catches one of these | `#38BDF8` sky |
+| 02 | Nobody is watching | `#C084FC` violet |
 | 03 | What could not be undone | `#FBBF24` amber |
-| 04 | How it is built | `#C084FC` violet |
 
 ## Capturing the demo
 
@@ -83,15 +85,17 @@ uvicorn palinode.api.main:app --app-dir src --port 8080
 open http://localhost:8080
 ```
 
-Three clicks, in this order, and do not cut between them:
+Two clicks, in this order, and do not cut between them:
 
-1. **Run the fleet.** Five actions land. Say the tier out loud as each appears,
-   and point out that `wire_transfer` is already red before anything has gone
-   wrong, because the tier is decided before the action runs, not after.
-2. **Preview undo.** The dry run shows the plan and the order. Worth four
-   seconds, it proves the reversal is planned rather than improvised.
-3. **Undo.** Four rows come back. One does not. Let the disclosure panel finish
-   rendering before cutting away.
+1. **Screen invoices.** One is a prompt injection and Model Armor blocks it at
+   HIGH confidence. The other has the bank details changed, contains no
+   injection at all, and passes. Say out loud that both send the money to the
+   same account. This is the whole argument for the project.
+2. **Run the fleet.** Five actions land on the invoice that passed. Point out
+   that `wire_transfer` is already red before anything has gone wrong, because
+   the tier is decided before the action runs. Then stop talking and let
+   Sentinel fire on its own. Nobody presses undo. That is the point, and it is
+   worth the silence.
 
 Then show the Cloud Run console, the service URL, and the logs. This is a
 scored requirement, not a nice to have.
@@ -105,7 +109,7 @@ scored requirement, not a nice to have.
 
 ## Still missing before submission
 
-- **The Cloud Run console shot.** Scored requirement, and there is nothing to
-  film until the service is deployed.
-- **Narration.** The current cut runs 58 seconds with no audio. Four minutes is
-  the cap, so there is room.
+- **The Cloud Run console shot.** Scored requirement. The service is deployed
+  at https://palinode-173485225974.us-central1.run.app, so this is now just a
+  matter of filming the console, the revision list and the logs.
+- **Narration.** The current cut runs 58 seconds with no audio.
