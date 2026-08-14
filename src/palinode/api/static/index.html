@@ -513,7 +513,9 @@ $("seed").onclick = async () => {
     $("undo").disabled = true;
     $("undo").classList.remove("armed");
     $("preview").disabled = true;
-    await api(`/sentinel/${runId}/watch`, { method: "POST" });
+    const outcome = await api(`/sentinel/${runId}/watch`, { method: "POST" });
+    log(`<b>sentinel</b> reversed ${(outcome.reversed || []).length}, ` +
+        `unrecoverable ${(outcome.unrecoverable || []).length}`);
   }
 };
 

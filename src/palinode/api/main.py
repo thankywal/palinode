@@ -11,7 +11,7 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -164,7 +164,16 @@ async def _reverse(run_id: str, from_action: Optional[str]) -> None:
 
 
 @app.post("/undo")
-async def undo(request: UndoRequest, background: BackgroundTasks) -> dict:
+async def undo(request: UndoRequest) -> dict:
+    """Plan and run the reversal, and wait for it.
+
+    This used to hand the work to a FastAPI background task so the response
+    could return immediately. On Cloud Run that is a trap: CPU is only
+    allocated while a request is in flight, so the background task stalls the
+    moment the response goes out and the reversal silently never finishes.
+    Keeping it in the request is both correct and cheaper, because the service
+    can then scale to zero instead of holding an instance warm.
+    """
     regret = RegretAgent(run_tool=run_tool)
     plan = await regret.plan(run_id=request.run_id, from_action=request.from_action)
 
@@ -177,15 +186,6 @@ async def undo(request: UndoRequest, background: BackgroundTasks) -> dict:
             "exposure_usd": round(plan.exposure_usd, 2),
         }
 
-    # Kicked into the background so the dashboard can watch states change
-    # rather than staring at a spinner until the whole reversal is done.
-    background.add_task(_reverse, request.run_id, request.from_action)
-    return {"started": True, "planned": plan.summary()}
-
-
-@app.post("/undo/sync")
-async def undo_sync(request: UndoRequest) -> dict:
-    """Same thing, but waits. Easier to script against."""
     await _reverse(request.run_id, request.from_action)
     return await get_ledger().get_outcome(request.run_id) or {}
 
@@ -216,20 +216,10 @@ async def sentinel_assess(run_id: str) -> dict:
     }
 
 
-async def _sentinel_watch(run_id: str) -> None:
+@app.post("/sentinel/{run_id}/watch")
+async def sentinel_watch(run_id: str) -> dict:
+    """Hand the run to Sentinel and let it decide. No approval step."""
     outcome = await _sentinel().watch(run_id, verifier=Verifier(run_tool=run_tool))
     if outcome.get("triggered"):
         await get_ledger().save_outcome(run_id, outcome)
-
-
-@app.post("/sentinel/{run_id}/watch")
-async def sentinel_watch(run_id: str, background: BackgroundTasks) -> dict:
-    """Hand the run to Sentinel and let it decide. No approval step."""
-    assessment = await _sentinel().assess(run_id)
-    background.add_task(_sentinel_watch, run_id)
-    return {
-        "watching": run_id,
-        "score": assessment.score,
-        "will_reverse": assessment.should_reverse,
-        "signals": [s.name for s in assessment.signals],
-    }
+    return outcome
