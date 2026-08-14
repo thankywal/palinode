@@ -28,10 +28,27 @@ allowed to be titles.
 
 Four minutes is the hard cap. The screen capture is roughly three of them.
 
-## Render
+## Build the whole cut
 
 ```bash
 npm install
+npx playwright install chromium
+
+# control plane in another shell
+cd .. && uvicorn palinode.api.main:app --app-dir src --port 8099
+
+node capture.mjs        # records the real dashboard, three segments
+./assemble.sh           # renders the cards and stitches everything
+open out/palinode-demo.mp4
+```
+
+`capture.mjs` drives a real browser against the real API. The reversal on
+screen is the one Regret actually planned and ran. Nothing in the captured
+segments is animated.
+
+## Render cards only
+
+```bash
 npm run studio          # preview and scrub
 npm run render:all      # intro and outro to out/
 ```
@@ -85,3 +102,10 @@ scored requirement, not a nice to have.
 - Dark mode terminal for the `demo.py` shot if you use one.
 - English narration or English subtitles, both are accepted.
 - Upload unlisted to YouTube, not private. Private cannot be opened by judges.
+
+## Still missing before submission
+
+- **The Cloud Run console shot.** Scored requirement, and there is nothing to
+  film until the service is deployed.
+- **Narration.** The current cut runs 58 seconds with no audio. Four minutes is
+  the cap, so there is room.
