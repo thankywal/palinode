@@ -28,6 +28,17 @@ from ..types import (
 
 log = logging.getLogger("palinode.regret")
 
+# Fields an action's own result may contribute to its compensation. Narrow on
+# purpose: a compensation should be driven by the contract, with the result
+# filling in only the handles that could not have been known in advance.
+CARRIED = ("ts", "message_id", "charge_id", "merge_sha", "wire_id", "prior")
+
+
+def _identifiers(result: Optional[dict]) -> dict:
+    if not result:
+        return {}
+    return {k: v for k, v in result.items() if k in CARRIED and v is not None}
+
 ToolRunner = Callable[[str, dict], Awaitable[dict]]
 
 
@@ -71,7 +82,18 @@ class RegretAgent:
             step = ReversalStep(
                 action_id=record.id,
                 tool=record.contract.tool,
-                args={**record.contract.args, **record.contract.snapshot},
+                args={
+                    **record.contract.args,
+                    **record.contract.snapshot,
+                    # Identifiers the original action produced. A contract is
+                    # written before the action runs, so it cannot name a
+                    # Slack ts or a charge id that does not exist yet, and
+                    # editing it afterwards is the mutation the hash chain
+                    # exists to catch. The result was recorded at execution
+                    # time and is part of the same append only entry, so
+                    # reading it here is not a rewrite of anything.
+                    **_identifiers(record.result),
+                },
                 verify=record.contract.verify,
                 depends_on=[previous] if previous else [],
             )
@@ -125,6 +147,21 @@ class RegretAgent:
                 )
                 annotate(current, outcome="failed", error=str(exc)[:160])
                 return {"action_id": step.action_id, "error": str(exc)}
+
+            # A connector that reports failure in its return value is a
+            # failure. This only checked for raised exceptions, so a Slack
+            # delete that quietly did nothing and returned {"ok": false} was
+            # recorded as compensated. A compensation that reports success
+            # without doing anything is the exact failure this project exists
+            # to prevent, and it was sitting in the reversal path.
+            if isinstance(result, dict) and result.get("ok") is False:
+                reason = result.get("reason", "connector reported failure")
+                log.error("compensation for %s did nothing: %s", step.action_id, reason)
+                await self.ledger.advance(
+                    step.action_id, ActionState.FAILED, error=reason
+                )
+                annotate(current, outcome="failed", error=str(reason)[:160])
+                return {"action_id": step.action_id, "error": reason}
 
             confirmed = True
             if verifier is not None and step.verify:

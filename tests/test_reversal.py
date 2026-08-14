@@ -138,9 +138,19 @@ async def _seeded_run(run: str, beneficiary: str):
         run, "db_write", Tier.T0_REVERSIBLE,
         CompensationContract(tool="db_restore", args={"table": "t", "key": "k"}),
     )
+    # A real charge in the world, so the refund has something to refund. The
+    # fixture used to name a charge that existed nowhere, and the reversal
+    # counted the resulting no-op as a success. That is the defect this suite
+    # is supposed to be watching for, sitting inside the suite itself.
+    charged = await run_tool(
+        "stripe_charge",
+        {"customer": "cus_northwind", "amount_usd": 1180.0},
+    )
     b = await _record(
         run, "stripe_charge", Tier.T1_COMPENSABLE,
-        CompensationContract(tool="stripe_refund", args={"charge_id": "ch_1"}),
+        CompensationContract(
+            tool="stripe_refund", args={"charge_id": charged["charge_id"]}
+        ),
         parent=a.id,
     )
     rec = await _record(
@@ -582,3 +592,44 @@ def test_a_token_without_a_target_is_not_enough(monkeypatch):
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-pretend")
     monkeypatch.delenv("SLACK_DEMO_CHANNEL", raising=False)
     assert slack_live.enabled() is False
+
+
+@pytest.mark.asyncio
+async def test_a_compensation_that_does_nothing_is_a_failure():
+    """A connector can report failure without raising, and for a while that
+    counted as success. A Slack delete with no message ts returned
+    {"ok": false}, did nothing, and the action was recorded as compensated.
+    """
+    a = await _record(
+        "nf1", "slack_post", Tier.T2_SOCIAL,
+        CompensationContract(tool="slack_delete", args={"channel": "#x"}),
+    )
+
+    regret = RegretAgent(run_tool=run_tool)
+    plan = await regret.plan(run_id="nf1")
+    outcome = await regret.execute(plan)
+
+    assert outcome["reversed"] == []
+    assert outcome["failed"], "a no-op compensation was counted as a success"
+    assert (await get_ledger().get(a.id)).state is ActionState.FAILED
+
+
+@pytest.mark.asyncio
+async def test_the_compensation_gets_handles_the_contract_could_not_know():
+    """A contract is written before the action, so it cannot name a Slack ts.
+    The recorded result can, and reading it is not editing the entry."""
+    ledger = get_ledger()
+    posted = await run_tool("slack_post", {"channel": "#x", "text": "hello"})
+
+    a = await _record(
+        "nf2", "slack_post", Tier.T2_SOCIAL,
+        CompensationContract(tool="slack_delete", args={"channel": "#x"}),
+    )
+    await ledger.advance(a.id, ActionState.EXECUTED, result=posted)
+
+    plan = await RegretAgent(run_tool=run_tool).plan(run_id="nf2")
+    assert plan.steps[0].args["ts"] == posted["ts"]
+
+    outcome = await RegretAgent(run_tool=run_tool).execute(plan)
+    assert outcome["failed"] == []
+    assert posted["ts"] not in WORLD["slack"], "the message was not actually deleted"
