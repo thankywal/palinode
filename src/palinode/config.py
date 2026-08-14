@@ -35,7 +35,16 @@ class Settings:
     sovereign_mode: bool = field(default_factory=lambda: _flag("PALINODE_SOVEREIGN_MODE"))
 
     project: str = field(default_factory=lambda: os.getenv("GOOGLE_CLOUD_PROJECT", ""))
-    location: str = field(default_factory=lambda: os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1"))
+    # Gemini is served from `global` on this project, not from a region. The
+    # genai client reads GOOGLE_CLOUD_LOCATION itself, so this only has to
+    # agree with it. Pointing this at a region gets a 404 that reads like the
+    # model does not exist, which sends you looking in the wrong place.
+    location: str = field(default_factory=lambda: os.getenv("GOOGLE_CLOUD_LOCATION", "global"))
+    # Model Armor is genuinely regional and has its own host per region, so it
+    # cannot share the setting above.
+    armor_location: str = field(
+        default_factory=lambda: os.getenv("PALINODE_ARMOR_LOCATION", "us-central1")
+    )
     firestore_database: str = field(
         default_factory=lambda: os.getenv("PALINODE_FIRESTORE_DB", "(default)")
     )

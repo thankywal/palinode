@@ -133,7 +133,7 @@ class ModelArmor:
         try:
             import httpx
 
-            url = _endpoint(settings.project, settings.location, self.template)
+            url = _endpoint(settings.project, settings.armor_location, self.template)
             async with httpx.AsyncClient(timeout=6.0) as client:
                 response = await client.post(
                     url,

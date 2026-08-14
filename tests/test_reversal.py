@@ -439,3 +439,16 @@ async def test_the_read_path_does_not_call_a_model():
 
     await sentinel.assess("s4")
     assert called, "the decision path should still ask the model"
+
+
+def test_gemini_and_armor_do_not_share_a_location():
+    """Gemini is served from `global` here. Model Armor is genuinely regional.
+
+    Pointing both at the same place produced a 404 that read like the model did
+    not exist, which is a long way from where the problem actually was.
+    """
+    from palinode.config import Settings
+
+    s = Settings()
+    assert s.location == "global"
+    assert s.armor_location == "us-central1"
