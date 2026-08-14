@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from .limits import throttle
 from ..agents.herald import get_herald
 from ..agents.regret import RegretAgent
 from ..agents.sentinel import Sentinel
@@ -37,6 +38,11 @@ if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
 
 app = FastAPI(title="Palinode", version="0.1.0")
+
+# The service is public so judges can use it. The endpoints that reach Gemini,
+# Model Armor and Stripe are rate limited so that being public does not mean
+# handing the inference budget to the first crawler that finds it.
+app.middleware("http")(throttle)
 
 # Spans go to Cloud Trace when a project is configured. ADK already traces the
 # agent runs and tool calls, so what we add is the part it cannot know: why an

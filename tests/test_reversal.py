@@ -517,3 +517,34 @@ def test_install_swaps_the_tools_when_a_test_key_is_present(monkeypatch):
         import importlib
 
         importlib.reload(base)
+
+
+# --------------------------------------------------------------- rate limit
+
+
+def test_only_the_paid_routes_are_throttled():
+    """The dashboard polls reads several times a second and they are free."""
+    from palinode.api.limits import _is_costly
+
+    assert _is_costly("/demo/screen/loud", "POST")
+    assert _is_costly("/sentinel/run_x/watch", "POST")
+    assert _is_costly("/undo", "POST")
+
+    assert not _is_costly("/runs/run_x", "GET")
+    assert not _is_costly("/registry", "GET")
+    assert not _is_costly("/sentinel/run_x", "GET")
+    assert not _is_costly("/status", "GET")
+
+
+def test_the_caller_is_the_client_not_the_load_balancer():
+    """Bucketing everyone behind Cloud Run into one caller is worse than no
+    limit, because the first visitor exhausts it for everybody."""
+    from palinode.api.limits import _caller
+
+    class Req:
+        def __init__(self, xff):
+            self.headers = {"x-forwarded-for": xff} if xff else {}
+            self.client = type("C", (), {"host": "10.0.0.1"})()
+
+    assert _caller(Req("203.0.113.9, 169.254.1.1")) == "203.0.113.9"
+    assert _caller(Req("")) == "10.0.0.1"
