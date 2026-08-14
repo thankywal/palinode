@@ -414,3 +414,28 @@ async def test_the_scenario_never_edits_a_written_entry():
     report = await get_ledger().verify(run_id)
     assert report.intact, report.reason
     assert report.length == 5
+
+
+@pytest.mark.asyncio
+async def test_the_read_path_does_not_call_a_model():
+    """The dashboard polls this several times a second."""
+    from palinode.agents.sentinel import Sentinel
+
+    await _seeded_run("s4", "acct-unknown-77")
+    sentinel = Sentinel(regret=RegretAgent(run_tool=run_tool))
+    sentinel.known_counterparties = {"cus_northwind"}
+
+    called = False
+
+    async def _tripwire(_actions):
+        nonlocal called
+        called = True
+        return None
+
+    sentinel._model_signal = _tripwire
+
+    await sentinel.assess("s4", use_model=False)
+    assert not called, "the read path reached for a model"
+
+    await sentinel.assess("s4")
+    assert called, "the decision path should still ask the model"

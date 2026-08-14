@@ -245,8 +245,12 @@ def _sentinel() -> Sentinel:
 
 @app.get("/sentinel/{run_id}")
 async def sentinel_assess(run_id: str) -> dict:
-    """What Sentinel thinks of a run, without acting on it."""
-    assessment = await _sentinel().assess(run_id)
+    """What Sentinel thinks of a run, without acting on it.
+
+    Static signals only. This is a read the dashboard makes several times a
+    second, and it has no business calling a model to do it.
+    """
+    assessment = await _sentinel().assess(run_id, use_model=False)
     return {
         "run_id": run_id,
         "score": assessment.score,

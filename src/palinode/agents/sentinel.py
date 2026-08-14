@@ -218,7 +218,15 @@ class Sentinel:
 
     # ------------------------------------------------------------ decision
 
-    async def assess(self, run_id: str) -> Assessment:
+    async def assess(self, run_id: str, *, use_model: bool = True) -> Assessment:
+        """Score a run.
+
+        use_model=False keeps this to the static signals. The dashboard polls
+        this several times a second to draw a panel, and every one of those
+        polls was reaching Gemini, which is both slow and a way to spend an
+        inference budget on redrawing a number that has not changed. The
+        decision path still asks the model. Watching does not.
+        """
         actions = [
             a
             for a in await self.ledger.by_run(run_id)
@@ -229,9 +237,10 @@ class Sentinel:
 
         signals, trigger = await self._static_signals(actions)
 
-        model = await self._model_signal(actions)
-        if model is not None:
-            signals.append(model)
+        if use_model:
+            model = await self._model_signal(actions)
+            if model is not None:
+                signals.append(model)
 
         score = sum(s.weight for s in signals)
         rationale = "; ".join(s.detail for s in signals) or "nothing unusual"
