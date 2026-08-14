@@ -156,6 +156,20 @@
     color:var(--red); margin-bottom:7px;
   }
   .hint { font-size:11.5px; color:var(--dim); line-height:1.6; margin-top:11px; }
+  .step {
+    display:flex; align-items:center; gap:11px; padding:8px 10px;
+    border:1px solid var(--line); border-radius:8px; margin-bottom:7px;
+  }
+  .step:last-child { margin-bottom:0; }
+  .step .n {
+    width:21px; height:21px; border-radius:5px; display:grid; place-items:center;
+    font-size:10.5px; font-weight:800; color:var(--sky);
+    background:rgba(56,189,248,.14); border:1px solid rgba(56,189,248,.35);
+  }
+  .step .t { font-family:ui-monospace,Menlo,monospace; font-size:12.5px; }
+  .step.dead { border-color:rgba(248,113,113,.35); background:rgba(239,68,68,.06); }
+  .step.dead .n { color:var(--red); background:rgba(239,68,68,.14); border-color:rgba(248,113,113,.35); }
+  .step.dead .t { color:var(--red); }
   .log {
     font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--dim);
     max-height:150px; overflow-y:auto; line-height:1.85;
@@ -212,6 +226,11 @@
         <div class="stat"><span class="k">Compensated</span><span class="v amber" id="s-comp">0</span></div>
         <div class="stat"><span class="k">Unrecoverable</span><span class="v red" id="s-unrec">0</span></div>
         <div class="stat"><span class="k">Exposure</span><span class="v red" id="s-exp">$0</span></div>
+      </div>
+      <div class="panel" id="plan-panel" style="display:none">
+        <h2>Reversal Plan</h2>
+        <div class="hint" id="plan-summary"></div>
+        <div id="plan-steps" style="margin-top:11px"></div>
       </div>
       <div class="panel" id="disc-panel" style="display:none">
         <h2>Disclosure</h2>
@@ -349,6 +368,7 @@ $("seed").onclick = async () => {
   $("graph").innerHTML = `<div class="empty">the fleet is working</div>`;
   $("log").innerHTML = "";
   $("disc-panel").style.display = "none";
+  $("plan-panel").style.display = "none";
   known = new Map(); queue = [];
 
   const { run_id } = await api("/demo/seed", { method: "POST" });
@@ -357,11 +377,20 @@ $("seed").onclick = async () => {
 
   const data = await api(`/runs/${runId}`);
   data.actions.forEach(a => known.set(a.id, a.state));
-  paint(data.actions);
-  stats(data.actions, null);
   await refreshRegistry();
 
-  data.actions.forEach(a => log(`<b>${a.tool}</b> ${a.tier} ${STATE_WORD[a.state]}`));
+  // Same principle as the reversal stagger. The five actions have already run
+  // on the server by the time this returns, so revealing them one at a time is
+  // pacing, not fabrication. It lets a person read the tier on each row as it
+  // lands, which is the point of the whole screen.
+  $("graph").innerHTML = "";
+  for (const a of data.actions) {
+    $("graph").insertAdjacentHTML("beforeend", nodeHtml(a));
+    log(`<b>${a.tool}</b> ${a.tier} ${STATE_WORD[a.state]}`);
+    stats(data.actions.slice(0, data.actions.indexOf(a) + 1), null);
+    await new Promise(r => setTimeout(r, 620));
+  }
+  stats(data.actions, null);
 
   $("seed").disabled = false;
   $("preview").disabled = false;
@@ -378,11 +407,19 @@ $("preview").onclick = async () => {
     body: JSON.stringify({ run_id: runId, dry_run: true }),
   });
   log(`<b>dry run</b> ${plan.summary}`);
-  alert(
-    `Reversal plan\n\n${plan.summary}\n\n` +
-    plan.steps.map((s, i) => `${i + 1}. ${s.tool}`).join("\n") +
-    (plan.unrecoverable.length ? `\n\nCannot be reversed: ${plan.unrecoverable.length}` : "")
-  );
+
+  $("plan-panel").style.display = "";
+  $("plan-summary").textContent =
+    "Planned before anything is touched. Nothing has run yet.";
+  $("plan-steps").innerHTML = plan.steps.map((s, i) => `
+    <div class="step">
+      <span class="n">${i + 1}</span>
+      <span class="t">${s.tool}</span>
+    </div>`).join("") + (plan.unrecoverable.length ? `
+    <div class="step dead">
+      <span class="n">&mdash;</span>
+      <span class="t">${plan.unrecoverable.length} cannot be reversed</span>
+    </div>` : "");
 };
 
 $("undo").onclick = async () => {

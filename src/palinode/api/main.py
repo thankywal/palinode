@@ -111,6 +111,15 @@ async def blast_radius(action_id: str) -> dict:
     }
 
 
+@app.post("/demo/reset")
+async def reset() -> dict:
+    """Clear the world and the ledger. Puts the dashboard back to empty."""
+    global _last_outcome
+    _last_outcome = {}
+    await poisoned_invoice.reset()
+    return {"ok": True}
+
+
 @app.post("/demo/seed")
 async def seed() -> dict:
     """Reset and replay the poisoned invoice scenario."""
