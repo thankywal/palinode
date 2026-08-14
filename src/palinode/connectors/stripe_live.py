@@ -145,6 +145,19 @@ async def _resolve(charge_id: str) -> Optional[str]:
     if charge_id.startswith("pi_"):
         return charge_id
 
+    # List first, search second. Stripe's search index is eventually
+    # consistent and takes about a minute, so a charge created moments ago is
+    # invisible to it. The cold case creates a charge and reverses it in the
+    # same request, which is exactly the window search cannot see. Listing is
+    # immediately consistent and covers the recent case, which is the one that
+    # matters here.
+    recent = await _get("payment_intents?limit=100")
+    for intent in recent.get("data") or []:
+        if (intent.get("metadata") or {}).get("palinode_key") == charge_id:
+            return intent["id"]
+
+    # Anything older than the last hundred intents. This is where search earns
+    # its keep, and by then it has certainly indexed.
     found = await _get(
         "payment_intents/search"
         f"?query=metadata%5B%27palinode_key%27%5D%3A%27{charge_id}%27&limit=1"
