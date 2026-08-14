@@ -35,6 +35,28 @@ chapter "02" "Nobody is watching" \
   "The fleet acts on the invoice that passed. Sentinel reverses it without being asked." "#C084FC"
 chapter "03" "What could not be undone" \
   "A settled wire does not come back. Palinode says so instead of pretending." "#FBBF24"
+chapter "04" "None of that was local" \
+  "Cloud Run, Firestore, Model Armor and Cloud Trace, on the service the demo just used." "#4ADE80"
+
+echo "building the console slides"
+node console/build.mjs
+mkdir -p console/png
+for f in console/slides/*.html; do
+  n=$(basename "$f" .html)
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+    --screenshot="console/png/$n.png" --window-size=1920,1080 --hide-scrollbars \
+    --allow-file-access-from-files "$f" >/dev/null 2>&1
+done
+
+# Each console capture gets four and a half seconds and a very slow push in, so
+# it reads as a held shot rather than a slide that stopped.
+i=0
+for png in console/png/*.png; do
+  i=$((i+1))
+  ffmpeg -v error -y -loop 1 -t 4.5 -i "$png" \
+    -vf "scale=2400:-1,zoompan=z='min(zoom+0.00035,1.06)':d=135:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30,format=yuv420p" \
+    -c:v libx264 -preset medium -crf 19 "$WORK/console-$i.mp4"
+done
 
 echo "normalising"
 norm() {
@@ -52,7 +74,12 @@ norm "$OUT/ch02.mp4"                   "03-ch"
 norm "$OUT/capture/seg-02-sentinel.webm" "04-sentinel"
 norm "$OUT/ch03.mp4"                   "05-ch"
 norm "$OUT/capture/seg-03-disclosure.webm" "06-disclosure"
-norm "$OUT/outro.mp4"                  "07-outro"
+norm "$OUT/ch04.mp4"                   "07-ch"
+for c in "$WORK"/console-*.mp4; do
+  n=$(basename "$c" .mp4 | sed 's/console-//')
+  mv "$c" "$WORK/08-console-$n.mp4"
+done
+norm "$OUT/outro.mp4"                  "09-outro"
 
 echo "stitching"
 : > "$WORK/list.txt"

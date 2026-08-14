@@ -143,7 +143,11 @@ class LedgerStore:
     async def by_run(self, run_id: str) -> list[ActionRecord]:
         if self._client is not None:
             try:
-                query = self._client.collection(COLLECTION).where("run_id", "==", run_id)
+                from google.cloud.firestore_v1.base_query import FieldFilter
+
+                query = self._client.collection(COLLECTION).where(
+                    filter=FieldFilter("run_id", "==", run_id)
+                )
                 records = [
                     ActionRecord.model_validate(d.to_dict()) async for d in query.stream()
                 ]
@@ -226,7 +230,11 @@ class LedgerStore:
             return len(doomed)
 
         try:
-            query = self._client.collection(COLLECTION).where("run_id", "==", run_id)
+            from google.cloud.firestore_v1.base_query import FieldFilter
+
+            query = self._client.collection(COLLECTION).where(
+                filter=FieldFilter("run_id", "==", run_id)
+            )
             removed = 0
             async for doc in query.stream():
                 await doc.reference.delete()
