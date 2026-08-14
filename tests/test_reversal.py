@@ -250,3 +250,23 @@ def test_telemetry_is_optional():
             tel.annotate(current, verdict="allow")
     finally:
         tel._tracer, tel._enabled = saved_tracer, saved_enabled
+
+
+@pytest.mark.asyncio
+async def test_ledger_survives_firestore_falling_over():
+    """A 403 mid incident must not turn into a 500 on the recovery tool."""
+    from palinode.ledger.store import LedgerStore
+
+    class Exploding:
+        def collection(self, _):
+            raise RuntimeError("403 Missing or insufficient permissions")
+
+    store = LedgerStore()
+    store._client = Exploding()
+
+    record = ActionRecord(
+        run_id="f1", agent="test", tool="db_write", tier=Tier.T0_REVERSIBLE
+    )
+    assert await store.append(record) is record
+    assert store._client is None          # demoted, not retried forever
+    assert (await store.get(record.id)) is record   # memory copy still correct

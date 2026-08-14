@@ -52,13 +52,30 @@ class LedgerStore:
 
     # ---------------------------------------------------------------- writes
 
+    def _demote(self, operation: str, exc: Exception) -> None:
+        """Stop using Firestore for the rest of this process.
+
+        A permission or quota failure will not fix itself between one call and
+        the next, and a recovery tool that starts throwing 500s during an
+        incident is worse than one running on the in memory copy. The write
+        already landed in memory, so the ledger stays correct for this process
+        and loud in the logs about what it lost.
+        """
+        log.error(
+            "firestore %s failed, continuing in memory only: %s", operation, exc
+        )
+        self._client = None
+
     async def append(self, record: ActionRecord) -> ActionRecord:
         async with self._lock:
             self._mem[record.id] = record
         if self._client is not None:
-            await self._client.collection(COLLECTION).document(record.id).set(
-                record.model_dump(mode="json")
-            )
+            try:
+                await self._client.collection(COLLECTION).document(record.id).set(
+                    record.model_dump(mode="json")
+                )
+            except Exception as exc:  # noqa: BLE001
+                self._demote("append", exc)
         return record
 
     async def advance(
@@ -86,7 +103,10 @@ class LedgerStore:
                 patch["result"] = result
             if error is not None:
                 patch["error"] = error
-            await self._client.collection(COLLECTION).document(action_id).update(patch)
+            try:
+                await self._client.collection(COLLECTION).document(action_id).update(patch)
+            except Exception as exc:  # noqa: BLE001
+                self._demote("advance", exc)
         return record
 
     # ---------------------------------------------------------------- reads
@@ -97,7 +117,11 @@ class LedgerStore:
         if cached is not None or self._client is None:
             return cached
 
-        snap = await self._client.collection(COLLECTION).document(action_id).get()
+        try:
+            snap = await self._client.collection(COLLECTION).document(action_id).get()
+        except Exception as exc:  # noqa: BLE001
+            self._demote("get", exc)
+            return None
         if not snap.exists:
             return None
         record = ActionRecord.model_validate(snap.to_dict())
@@ -107,11 +131,16 @@ class LedgerStore:
 
     async def by_run(self, run_id: str) -> list[ActionRecord]:
         if self._client is not None:
-            query = self._client.collection(COLLECTION).where("run_id", "==", run_id)
-            records = [ActionRecord.model_validate(d.to_dict()) async for d in query.stream()]
-            async with self._lock:
-                for r in records:
-                    self._mem.setdefault(r.id, r)
+            try:
+                query = self._client.collection(COLLECTION).where("run_id", "==", run_id)
+                records = [
+                    ActionRecord.model_validate(d.to_dict()) async for d in query.stream()
+                ]
+                async with self._lock:
+                    for r in records:
+                        self._mem.setdefault(r.id, r)
+            except Exception as exc:  # noqa: BLE001
+                self._demote("by_run", exc)
         async with self._lock:
             records = [r for r in self._mem.values() if r.run_id == run_id]
         return sorted(records, key=lambda r: r.created_at)
