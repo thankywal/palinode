@@ -72,16 +72,18 @@ body{background:#0B1020;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
     <div class="arw">&#8595;</div>
 
     <div class="box" style="flex:0 0 auto">
-      <div class="t">SYSTEMS OF RECORD <span style="color:#8FA0BC;font-weight:400;letter-spacing:0">&nbsp;simulated</span></div>
+      <div class="t">SYSTEMS OF RECORD</div>
       <div class="sys">
-        <div class="s">Gmail</div><div class="s">Stripe</div>
-        <div class="s">GitHub</div><div class="s">Postgres</div>
+        <div class="s" style="border-color:rgba(74,222,128,.45);background:rgba(34,197,94,.09)">Stripe <span style="color:#4ADE80;font-size:10px">live</span></div>
+        <div class="s" style="border-color:rgba(74,222,128,.45);background:rgba(34,197,94,.09)">GitHub <span style="color:#4ADE80;font-size:10px">live</span></div>
+        <div class="s" style="border-color:rgba(74,222,128,.45);background:rgba(34,197,94,.09)">Slack <span style="color:#4ADE80;font-size:10px">live</span></div>
+        <div class="s">Gmail <span style="color:#8FA0BC;font-size:10px">sim</span></div>
       </div>
-      <div class="s" style="margin-top:7px">Slack</div>
+      <div class="s" style="margin-top:7px">Postgres <span style="color:#8FA0BC;font-size:10px">sim</span></div>
       <div style="margin-top:9px;font-size:11px;color:#8FA0BC;line-height:1.5">
-        In memory behind the real tool names. A real client replaces the body
-        of each connector and nothing else, because Warden only reads names
-        and contracts.
+        Three are the real APIs, keyed from Secret Manager. Stripe refuses any
+        key that is not sk_test_. The two stand ins sit behind the same tool
+        names, because Warden only reads names and contracts.
       </div>
     </div>
 

@@ -60,22 +60,24 @@ Each agent carries a SPIFFE shaped identity, the same shape Google's Agent Ident
 Worth being exact, because the demo shows money moving.
 
 **Real:** Cloud Run, Firestore, Model Armor, Gemini 3.5 Flash on Vertex AI,
-Cloud Trace, and the ADK integration. Every verdict, span and document in the
-video came out of those services.
+Cloud Trace, the ADK integration, and three of the five systems of record.
 
-**Simulated:** the five systems of record. Gmail, Stripe, GitHub, Postgres and
-Slack are in memory implementations sitting behind the real tool names. No
-Stripe key, no Slack token, no mailbox.
+| System | | What the demo does to it |
+|---|---|---|
+| Stripe | live, test mode | Creates a PaymentIntent, then refunds it |
+| GitHub | live | Commits to a repository, then commits the revert |
+| Slack | live | Posts a message, then deletes it and posts a correction |
+| Gmail | simulated | OAuth for one mailbox was not worth the setup |
+| Postgres | simulated | A dictionary holding a prior value, which is all T0 needs |
 
-That boundary is deliberate rather than unfinished. The interesting behaviour
-is in deciding what can be taken back and executing it in the right order, and
-that logic never learns which client it is talking to. The Warden reads tool
-names and compensation contracts, so a real client replaces the body of one
-function in `connectors/base.py` and nothing else moves.
+Credentials come from Secret Manager, never the repository, and the Stripe
+connector refuses to start against a key that does not begin with `sk_test_`.
+The demo issues charges, and pointing it at real money would be exactly the
+mistake this project exists to catch.
 
-It does mean the reversal in the demo is a real reversal of a simulated world,
-not a real reversal of a real one, and I would rather say that than let the
-colours imply otherwise.
+Connecting the real three was worth it for what it broke. Three defects had
+been sitting behind the simulator and none were visible until something real
+disagreed.
 
 ## How I built it
 
@@ -102,6 +104,28 @@ OpenTelemetry spans for tier classification, contract capture, the Armor verdict
 **`/healthz` never reached my container.** On `run.app` domains the Google frontend answers that path itself. Every other route worked. It looks exactly like the service being down.
 
 **Causal inference was more than I could finish.** Agents declare their causal parent through the tool wrapper. Automatic inference is the first thing I would build next. A declaration that is right beats an inference that is nearly right when the output is a refund.
+
+**Stripe assigns the id, and the contract cannot be edited to learn it.** The
+agent names the charge before making it so the compensation contract can point
+at something that does not exist yet. That works against a simulator that
+accepts the name. Real Stripe assigns its own `pi_...` and the first live
+refund failed with "No such payment_intent". Editing the contract afterwards
+was not available, since that is the mutation the hash chain exists to catch.
+The fix was to put the agent's key in the intent's metadata and resolve it at
+reversal time, so the contract still says what it said when it was written.
+
+**Stripe's search index cannot see a charge made a second ago.** Search is
+eventually consistent and takes about a minute. The cold case creates a charge
+and reverses it inside one request, which is exactly the window search cannot
+see, so the lookup found nothing and the reversal reported a clean failure.
+Listing is immediately consistent, so it lists first and falls back to search
+only for anything older than the last hundred intents.
+
+**The cold case was reversing things that had never existed.** It seeded made
+up ids straight into the ledger, which the in memory world accepted happily.
+Against real GitHub it failed with Not Found on a sha that was never anywhere.
+It now creates the artifacts it later reverses and dates only the ledger
+entries back, because a commit cannot be made to have happened in July.
 
 ## What I learned
 
