@@ -1,0 +1,47 @@
+[
+  {
+    "id": "01-hook",
+    "visual": "intro card",
+    "seconds": 9.85
+  },
+  {
+    "id": "02-two-invoices",
+    "visual": "model armor screening, one blocked one passed",
+    "seconds": 29.95
+  },
+  {
+    "id": "03-fleet-acts",
+    "visual": "five actions landing on the dashboard",
+    "seconds": 17.475
+  },
+  {
+    "id": "04-sentinel",
+    "visual": "sentinel panel appears, reversal begins",
+    "seconds": 23.225
+  },
+  {
+    "id": "05-what-came-back",
+    "visual": "rows turning green and amber",
+    "seconds": 19.025
+  },
+  {
+    "id": "06-what-did-not",
+    "visual": "wire stays red, disclosure panel",
+    "seconds": 12.15
+  },
+  {
+    "id": "07-it-was-real",
+    "visual": "stripe, github, slack dashboards",
+    "seconds": 14.675
+  },
+  {
+    "id": "08-google-cloud",
+    "visual": "cloud run, logs, trace, firestore",
+    "seconds": 20.25
+  },
+  {
+    "id": "09-close",
+    "visual": "outro numbers",
+    "seconds": 13.675
+  }
+]

@@ -1,11 +1,15 @@
 /**
- * Composes the Cloud Run console captures into slides on the Palinode
- * backdrop, so the deployment evidence cuts against the rest of the film
- * instead of dropping to a bare browser window on a white page.
+ * Composes the console captures into slides on the Palinode backdrop, so the
+ * evidence cuts against the rest of the film instead of dropping to a bare
+ * browser window on a white page.
  *
  *   node console/build.mjs
  *
- * The captures themselves are untouched. Only the frame around them is ours.
+ * The captures are shown at their own size and never stretched. An earlier cut
+ * blew a 1568 pixel wide screenshot up into a 1920 frame, which turned every
+ * line of console text into a smear. Console text is the entire point of these
+ * shots, so the frame gives way to the screenshot rather than the other way
+ * round.
  */
 
 import {readFileSync, writeFileSync, mkdirSync} from 'node:fs';
@@ -14,45 +18,79 @@ import {fileURLToPath} from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
+/** Native size of every capture. Displayed one to one, never scaled. */
+const SHOT_W = 1568;
+const SHOT_H = 764;
+
+const SKY = '#38BDF8';
+const VIOLET = '#C084FC';
+const AMBER = '#FBBF24';
+
+/**
+ * Segment 07 is the three third party systems, segment 08 is Google Cloud.
+ * The order matches the order the narration names them in, because the voice
+ * says "here is the Stripe dashboard" and the wrong picture underneath that is
+ * worse than no picture at all.
+ */
 const SLIDES = [
   {
-    file: '01-service.jpg',
+    file: 'p1-stripe.jpg',
+    group: 'IT WAS REAL',
     index: '01',
-    title: 'Deployed and serving',
-    caption: 'Cloud Run, us-central1. The URL in the demo is this service.',
-    accent: '#38BDF8',
+    title: 'Stripe',
+    caption: 'Eleven live charges. Nine refunded by Palinode, two left standing.',
+    accent: SKY,
   },
   {
-    file: '02-revisions.jpg',
+    file: 'p2-github.jpg',
+    group: 'IT WAS REAL',
     index: '02',
-    title: 'Sixteen revisions',
-    caption:
-      'Request based billing, scales to zero, capped at three instances.',
-    accent: '#38BDF8',
+    title: 'GitHub',
+    caption: 'Every approve commit followed by a revert, on the real default branch.',
+    accent: SKY,
   },
   {
-    file: '03-logs.jpg',
+    file: 'p7-slack.jpg',
+    group: 'IT WAS REAL',
     index: '03',
-    title: 'What the service said',
-    caption:
-      'Model Armor blocked the injection. Sentinel reversed the run without human approval, score 2.40.',
-    accent: '#C084FC',
+    title: 'Slack',
+    caption: 'The approval deleted, and the correction standing where it was.',
+    accent: SKY,
   },
   {
-    file: '04-trace.jpg',
+    file: 'p3-cloudrun.jpg',
+    group: 'GOOGLE CLOUD',
     index: '04',
-    title: 'Our spans, in Cloud Trace',
-    caption:
-      'palinode.sentinel.assess, warden.evaluate, regret.compensate. OpenTelemetry, not just what ADK emits.',
-    accent: '#C084FC',
+    title: 'Cloud Run',
+    caption: 'Request based billing, minimum zero instances, capped at three.',
+    accent: VIOLET,
   },
   {
-    file: '05-firestore.jpg',
+    file: 'p6-logs.jpg',
+    group: 'GOOGLE CLOUD',
     index: '05',
-    title: 'One action in the ledger',
+    title: 'The logs',
     caption:
-      'A SPIFFE actor, the causal parent, the contract with no reversal, and the hash that commits to it.',
-    accent: '#FBBF24',
+      'Sentinel scoring the run at 1.00 on its own, then the instance shutting down.',
+    accent: VIOLET,
+  },
+  {
+    file: 'p5-trace.jpg',
+    group: 'GOOGLE CLOUD',
+    index: '06',
+    title: 'Cloud Trace',
+    caption:
+      'palinode.sentinel.assess, warden.evaluate, regret.compensate. Our spans, not just what ADK emits.',
+    accent: VIOLET,
+  },
+  {
+    file: 'p4-firestore.jpg',
+    group: 'GOOGLE CLOUD',
+    index: '07',
+    title: 'Firestore',
+    caption:
+      'A SPIFFE actor, the causal parent, the contract written before the act, and the hash that commits to it.',
+    accent: AMBER,
   },
 ];
 
@@ -71,42 +109,53 @@ const page = (slide, dataUri) => `<!doctype html>
       radial-gradient(900px circle at 6% -8%, rgba(56,189,248,.16), transparent 60%),
       radial-gradient(900px circle at 100% 108%, rgba(248,113,113,.12), transparent 60%);
   }
-  .wrap { position:relative; padding:52px 70px; height:100%; display:flex; flex-direction:column; }
-  .head { display:flex; align-items:flex-end; gap:26px; margin-bottom:26px; }
-  .bar { width:7px; height:74px; border-radius:4px; background:${slide.accent}; }
+  .wrap {
+    position:relative; height:100%;
+    display:flex; flex-direction:column; align-items:center;
+    padding:72px 0 0;
+  }
+  .head {
+    width:${SHOT_W}px; display:flex; align-items:flex-end; gap:22px; margin-bottom:22px;
+  }
+  .bar { width:6px; height:62px; border-radius:4px; background:${slide.accent}; }
   .idx {
-    font-family:ui-monospace,Menlo,monospace; font-size:17px; letter-spacing:3.5px;
+    font-family:ui-monospace,Menlo,monospace; font-size:15px; letter-spacing:3.5px;
     color:${slide.accent}; font-weight:700;
   }
-  .title { font-size:52px; font-weight:800; letter-spacing:-1.2px; margin-top:6px; line-height:1; }
-  .cap { font-size:25px; color:#8FA0BC; margin-left:auto; max-width:760px; text-align:right; line-height:1.45; }
+  .title { font-size:44px; font-weight:800; letter-spacing:-1px; margin-top:5px; line-height:1; }
+  .cap {
+    font-size:21px; color:#8FA0BC; margin-left:auto; max-width:820px;
+    text-align:right; line-height:1.4;
+  }
+  /* One to one. No width, no height, no object-fit, nothing that resamples. */
   .shot {
-    flex:1; border-radius:14px; overflow:hidden;
+    width:${SHOT_W}px; height:${SHOT_H}px;
+    border-radius:12px; overflow:hidden;
     border:1px solid rgba(255,255,255,.16);
     box-shadow:0 30px 90px rgba(0,0,0,.55);
-    background:#fff; display:flex; align-items:flex-start; justify-content:center;
   }
-  .shot img { width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
+  .shot img { display:block; }
 </style></head><body>
   <div class="glow"></div>
   <div class="wrap">
     <div class="head">
       <div class="bar"></div>
       <div>
-        <div class="idx">CLOUD RUN ${slide.index}</div>
+        <div class="idx">${slide.group} &nbsp;${slide.index}</div>
         <div class="title">${slide.title}</div>
       </div>
       <div class="cap">${slide.caption}</div>
     </div>
-    <div class="shot"><img src="${dataUri}"></div>
+    <div class="shot"><img src="${dataUri}" width="${SHOT_W}" height="${SHOT_H}"></div>
   </div>
 </body></html>`;
 
 mkdirSync(join(HERE, 'slides'), {recursive: true});
 
-for (const slide of SLIDES) {
+SLIDES.forEach((slide, i) => {
   const bytes = readFileSync(join(HERE, slide.file));
   const uri = `data:image/jpeg;base64,${bytes.toString('base64')}`;
-  writeFileSync(join(HERE, 'slides', slide.file.replace('.jpg', '.html')), page(slide, uri));
-  console.log('  wrote', slide.file.replace('.jpg', '.html'));
-}
+  const name = `s${String(i + 1).padStart(2, '0')}.html`;
+  writeFileSync(join(HERE, 'slides', name), page(slide, uri));
+  console.log(`  wrote ${name}  ${slide.title}`);
+});

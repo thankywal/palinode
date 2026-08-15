@@ -3,41 +3,76 @@
  *
  * This is a capture, not a reconstruction. A real browser clicks the real
  * buttons, the requests hit the real API, and the reversal that shows up on
- * screen is the one Sentinel actually decided on and Regret actually ran.
- * Nothing in the captured segments is animated.
+ * screen really did refund a Stripe charge, revert a GitHub commit and delete
+ * a Slack message.
  *
  *   PALINODE_URL=https://palinode-...run.app node capture.mjs
  *
- * Defaults to the deployed service so the address bar in the footage is itself
- * the proof of deployment. Point it at localhost to iterate faster.
+ * The pacing is set by the narration rather than by taste. Segments 03 to 06
+ * run to about seventy two seconds of voiceover, so the dashboard is taken in
+ * one continuous shot of that length instead of four cuts. An unbroken take is
+ * harder to fake and easier to believe.
  */
 
 import {chromium} from 'playwright';
-import {mkdirSync, readdirSync, renameSync, statSync} from 'node:fs';
-import {join} from 'node:path';
+import {mkdirSync, readdirSync, renameSync, statSync, readFileSync} from 'node:fs';
+import {join, dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
+const HERE = dirname(fileURLToPath(import.meta.url));
 const BASE =
   process.env.PALINODE_URL ?? 'https://palinode-173485225974.us-central1.run.app';
-const OUT = 'out/capture';
+const OUT = join(HERE, 'out/capture');
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** One recorded segment. Each becomes its own clip in the final cut. */
+/** How long each narration segment runs, so the picture can be cut to it. */
+function narrationSeconds() {
+  try {
+    const timing = JSON.parse(
+      readFileSync(join(HERE, 'audio/vo/timing.json'), 'utf8')
+    );
+    return Object.fromEntries(timing.map((t) => [t.id, t.seconds]));
+  } catch {
+    console.warn('  no timing.json, falling back to estimates');
+    return {};
+  }
+}
+
+const VO = narrationSeconds();
+const secs = (id, fallback) => (VO[id] ?? fallback) * 1000;
+
 async function segment(name, steps) {
   mkdirSync(OUT, {recursive: true});
 
   const browser = await chromium.launch();
+  // Recorded at twice the delivery size. The board goes still once the
+  // reversal lands, and the back half of the narration is still talking about
+  // parts of it, so the edit frames in on whichever panel the voice is on.
+  // Framing in on a 1080p capture is how the console slides ended up blurred.
+  // At 4K a half frame crop is delivered at its own size and stays sharp, and
+  // the take is still one continuous unbroken shot.
+  //
+  // deviceScaleFactor does not reach the recorder. It writes whatever the
+  // viewport is into the top left of the frame and leaves the rest grey. So
+  // the viewport is the full 4K and the page is zoomed to lay out at 1920
+  // wide, which renders every glyph at twice the resolution for real.
   const context = await browser.newContext({
-    viewport: {width: 1920, height: 1080},
-    recordVideo: {dir: OUT, size: {width: 1920, height: 1080}},
+    viewport: {width: 3840, height: 2160},
+    recordVideo: {dir: OUT, size: {width: 3840, height: 2160}},
     deviceScaleFactor: 1,
   });
   const page = await context.newPage();
 
   // Not networkidle. The dashboard polls every 350ms, so the network is never
   // idle and the wait burns the full timeout into the front of every clip.
-  await page.goto(BASE, {waitUntil: 'domcontentloaded'});
+  // pace=2 doubles the reveal stagger, and only the reveal. The narration
+  // names the five actions one at a time and reading is slower than a fetch,
+  // so at the default speed the voice is still on the database write while the
+  // wire has already landed.
+  await page.goto(`${BASE}/?pace=2`, {waitUntil: 'domcontentloaded'});
   await page.waitForLoadState('load');
+  await page.addStyleTag({content: 'html { zoom: 2 }'});
   await wait(900);
 
   await steps(page);
@@ -45,7 +80,6 @@ async function segment(name, steps) {
   await context.close();
   await browser.close();
 
-  // Playwright names videos by an internal id, so claim the newest one.
   const videos = readdirSync(OUT)
     .filter((f) => f.endsWith('.webm') && !f.startsWith('seg-'))
     .map((f) => ({f, t: statSync(join(OUT, f)).mtimeMs}))
@@ -59,46 +93,52 @@ async function segment(name, steps) {
 
 async function main() {
   console.log('recording against', BASE);
-
   await fetch(`${BASE}/demo/reset`, {method: 'POST'});
 
-  // 01. Model Armor. One invoice is a prompt injection and gets caught at HIGH
-  //     confidence. The other has the bank details changed and no injection in
-  //     it at all, so there is nothing for a prompt filter to match. Both put
-  //     the money in the same account.
-  await segment('01-armor', async (page) => {
-    await wait(1400);
-    await page.click('#screen');
-    await page.waitForSelector('.inv', {timeout: 40000});
-    await wait(6000);
-  });
+  // Segments 03 to 06, in one take. The fleet acts, Sentinel decides on its
+  // own, the reversal runs, and the disclosure lands. Cutting between those
+  // would invite the question of what happened in the cut.
+  const budget =
+    secs('03-fleet-acts', 17.5) +
+    secs('04-sentinel', 23) +
+    secs('05-what-came-back', 19) +
+    secs('06-what-did-not', 12);
 
-  // 02. The fleet acts on the invoice that passed, and Sentinel reverses it
-  //     without being asked. One continuous shot, because the point is that
-  //     nobody intervened between the two halves.
-  await segment('02-sentinel', async (page) => {
+  await segment('dashboard', async (page) => {
+    // Screen the invoices first so the Model Armor panel is already on screen
+    // when the fleet runs. The voiceover has covered this by now.
     await page.click('#screen');
     await page.waitForSelector('.inv', {timeout: 40000});
-    await wait(700);
+    await wait(1500);
+
+    const started = Date.now();
 
     await page.click('#seed');
     await page.waitForSelector('.node', {timeout: 40000});
+
+    // The five rows reveal on a stagger, then hold so the tiers can be read.
+    await wait(9000);
+
     await page.waitForSelector('#sentinel-panel:not([style*="display: none"])', {
       timeout: 60000,
     });
-    await wait(2500);
+    await wait(3000);
+
     await page.waitForFunction(
       () =>
         document.querySelectorAll('.node.reversed, .node.compensated').length >= 4,
       {timeout: 120000}
     );
-    await wait(5000);
-  });
 
-  // 03. What could not be undone, and what the system says about it.
-  await segment('03-disclosure', async (page) => {
-    await page.waitForSelector('.node.unrecoverable', {timeout: 30000});
-    await wait(7000);
+    await page.waitForSelector('#disc-panel:not([style*="display: none"])', {
+      timeout: 60000,
+    });
+
+    // Hold on the finished board for whatever the narration still has to say.
+    const spent = Date.now() - started;
+    const remaining = Math.max(4000, budget - spent);
+    console.log(`  holding ${(remaining / 1000).toFixed(1)}s to reach the voiceover`);
+    await wait(remaining);
   });
 
   console.log('done');

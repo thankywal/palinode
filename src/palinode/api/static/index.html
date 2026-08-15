@@ -315,6 +315,16 @@ let polling = null;
 let queue = [];          // observed state changes waiting to be shown
 let draining = false;
 
+// How long a row is held before the next one is revealed. Presentation only,
+// and only ever applied to the reveal. The actions themselves have already run
+// on the server and their states are whatever the connectors returned.
+//
+// ?pace=2 slows the reveal for the film, where a line of narration is read
+// over each row as it lands. Reading is slower than a fetch, which is the only
+// reason this exists.
+const PACE = Math.min(4, Math.max(1,
+  parseFloat(new URLSearchParams(location.search).get("pace")) || 1));
+
 const STATE_WORD = {
   executed: "executed", pending: "pending", held: "held",
   reversed: "reversed", compensated: "compensated",
@@ -365,7 +375,7 @@ function drain() {
   const next = queue.shift();
   applyState(next);
   log(`<b>${next.tool}</b> ${STATE_WORD[next.state]}`);
-  setTimeout(() => { draining = false; drain(); }, 420);
+  setTimeout(() => { draining = false; drain(); }, 420 * PACE);
 }
 
 function stats(actions, outcome) {
@@ -521,7 +531,7 @@ $("seed").onclick = async () => {
     $("graph").insertAdjacentHTML("beforeend", nodeHtml(a));
     log(`<b>${a.tool}</b> ${a.tier} ${STATE_WORD[a.state]}`);
     stats(data.actions.slice(0, data.actions.indexOf(a) + 1), null);
-    await new Promise(r => setTimeout(r, 620));
+    await new Promise(r => setTimeout(r, 620 * PACE));
   }
   stats(data.actions, null);
 
