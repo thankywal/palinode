@@ -93,10 +93,16 @@ async def status() -> dict:
     except Exception as exc:  # noqa: BLE001
         refused = str(exc)[:120]
 
+    from ..connectors import PUBLIC_DEMO
+
     live = live_connectors()
     return {
         "ok": True,
         "service": "palinode",
+        # Said plainly, at the top, because everything below is worthless if a
+        # reader has to guess which world they are looking at.
+        "mode": "public demo, nothing real is touched" if PUBLIC_DEMO else "live connectors",
+        "public_demo": PUBLIC_DEMO,
         # Says plainly which systems of record are real in this deployment and
         # which are the in memory stand ins.
         "live_connectors": live,
@@ -397,7 +403,11 @@ async def sweep(request: Request, days: int = 45, act: bool = True) -> dict:
         ledger=get_ledger(),
         verifier=Verifier(run_tool=run_tool),
     )
+    # Two jobs on the same wake up. Letting go of what has waited long enough,
+    # and reassessing what nobody ever took back.
+    released = await sweeper.release(run_tool=run_tool) if act else []
     result = await sweeper.sweep(days=days, act=act)
+    result["released"] = released
 
     for outcome in result["reversed"]:
         run_id = outcome.get("run_id")

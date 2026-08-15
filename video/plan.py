@@ -39,6 +39,11 @@ def take_in() -> float:
     return 0.70
 
 
+# How long the timeline card keeps the frame after its last tick lands.
+# Enough to read a title, a value and a line of body copy.
+SWEEP_HOLD = 3.5
+
+
 def frames(seconds: float) -> int:
     return int(round(seconds * FPS))
 
@@ -75,8 +80,15 @@ def main() -> None:
         (seg["06-what-did-not"]["start"], "02c-disclosure", "remotion", "Disclosure"),
         # The cold case, in four beats: the run, the score of zero, the
         # report that arrives later, and the scheduler acting on it.
+        # The timeline card and the console proof both belong to the last line
+        # of this segment, and the first cut gave the card nothing: its fourth
+        # tick popped at 20.77s and the card was trimmed at 20.78s, so the
+        # payoff of the whole sequence was on screen for one frame.
+        #
+        # The card now holds long enough for that tick to be read, and the
+        # console shot takes the rest of the line.
         (seg["07-weeks-later"]["start"], "03-sweeper", "remotion", "Sweeper"),
-        (line_start("07-weeks-later", 3), "04-scheduler", "console", "scheduler"),
+        (line_start("07-weeks-later", 3) + SWEEP_HOLD, "04-scheduler", "console", "scheduler"),
         (line_start("08-it-was-real", 0), "05-stripe", "console", "stripe"),
         (line_start("08-it-was-real", 1), "06-github", "console", "github"),
         (line_start("08-it-was-real", 2), "07-slack", "console", "slack"),
@@ -129,7 +141,7 @@ def main() -> None:
         },
         "sweeper": {
             "durationInFrames": frames(
-                seg["08-it-was-real"]["start"] - sweep["start"]
+                line_start("07-weeks-later", 3) + SWEEP_HOLD - sweep["start"]
             ),
             "beats": [rel(sweep, n) for n in range(len(sweep["lines"]))],
         },

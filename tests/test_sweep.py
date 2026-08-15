@@ -265,3 +265,79 @@ async def test_a_claim_is_released_even_when_the_reversal_throws():
     # The next sweep, from a different container, can still pick it up.
     other, _ = _sweeper()
     assert await get_ledger().claim("r_bad", other.holder) is True
+
+
+@pytest.mark.asyncio
+async def test_a_hold_ends_when_its_window_does():
+    """The other half of the cooling off window.
+
+    The Warden holds T2 and T3 actions briefly so somebody can catch them. For
+    a long time nothing ever ended that window, which made the hold a one way
+    door: an action went in and only a reversal took it out. A held action
+    whose window has passed should proceed, and the ledger should say so.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    ledger = get_ledger()
+    ran = []
+
+    async def run_tool(tool, args):
+        ran.append(tool)
+        return {"ok": True}
+
+    waiting = ActionRecord(
+        run_id="r_hold",
+        agent="sourcing",
+        tool="slack_post",
+        args={"channel": "#procurement", "text": "vendor approved"},
+        tier=Tier.T2_SOCIAL,
+        state=ActionState.HELD,
+        release_at=datetime.now(timezone.utc) - timedelta(seconds=5),
+    )
+    await ledger.append(waiting)
+
+    not_yet = ActionRecord(
+        run_id="r_hold",
+        agent="sourcing",
+        tool="email_send",
+        args={"to": "ap@northwind.example"},
+        tier=Tier.T2_SOCIAL,
+        state=ActionState.HELD,
+        release_at=datetime.now(timezone.utc) + timedelta(minutes=5),
+    )
+    await ledger.append(not_yet)
+
+    sweeper, _ = _sweeper()
+    released = await sweeper.release(run_tool=run_tool)
+
+    assert [r["action_id"] for r in released] == [waiting.id]
+    assert ran == ["slack_post"], "the tool the hold was covering has to actually run"
+
+    assert (await ledger.get(waiting.id)).state is ActionState.EXECUTED
+    assert (await ledger.get(not_yet.id)).state is ActionState.HELD
+
+
+@pytest.mark.asyncio
+async def test_a_release_that_throws_is_recorded_as_failed():
+    """A hold that ends badly must not sit in the ledger claiming to be held."""
+    from datetime import datetime, timedelta, timezone
+
+    ledger = get_ledger()
+
+    async def boom(tool, args):
+        raise RuntimeError("slack is down")
+
+    waiting = ActionRecord(
+        run_id="r_hold",
+        agent="sourcing",
+        tool="slack_post",
+        args={"channel": "#procurement"},
+        tier=Tier.T2_SOCIAL,
+        state=ActionState.HELD,
+        release_at=datetime.now(timezone.utc) - timedelta(seconds=5),
+    )
+    await ledger.append(waiting)
+
+    sweeper, _ = _sweeper()
+    assert await sweeper.release(run_tool=boom) == []
+    assert (await ledger.get(waiting.id)).state is ActionState.FAILED

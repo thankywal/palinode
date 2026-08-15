@@ -203,6 +203,40 @@ class LedgerStore:
 
         return [run for run, _ in sorted(latest.items(), key=lambda kv: kv[1], reverse=True)]
 
+    async def due(self, now=None) -> list[ActionRecord]:
+        """Held actions whose cooling off window has passed.
+
+        A hold is only half a feature if nothing ever lets go of it. These are
+        the ones the Sweeper releases: the window was the chance to catch
+        them, nobody did, and they should now proceed.
+        """
+        now = now or datetime.now(timezone.utc)
+
+        if self._client is not None:
+            try:
+                from google.cloud.firestore_v1.base_query import FieldFilter
+
+                query = self._client.collection(COLLECTION).where(
+                    filter=FieldFilter("state", "==", ActionState.HELD.value)
+                )
+                records = [
+                    ActionRecord.model_validate(d.to_dict()) async for d in query.stream()
+                ]
+                async with self._lock:
+                    for r in records:
+                        self._mem.setdefault(r.id, r)
+            except Exception as exc:  # noqa: BLE001
+                self._demote("due", exc)
+
+        async with self._lock:
+            waiting = [
+                r for r in self._mem.values()
+                if r.state is ActionState.HELD
+                and r.release_at is not None
+                and r.release_at <= now
+            ]
+        return sorted(waiting, key=lambda r: r.release_at)
+
     async def claim(self, run_id: str, holder: str, *, ttl_seconds: int = 600) -> bool:
         """Take exclusive charge of reversing a run. False if someone else has it.
 

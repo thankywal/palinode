@@ -13,7 +13,7 @@
     "punchline": 1387
   },
   "sweeper": {
-    "durationInFrames": 839,
+    "durationInFrames": 728,
     "beats": [
       0,
       159,
@@ -22,7 +22,7 @@
     ]
   },
   "shots": {
-    "scheduler": 216,
+    "scheduler": 111,
     "stripe": 126,
     "github": 124,
     "slack": 156,

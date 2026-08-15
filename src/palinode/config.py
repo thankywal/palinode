@@ -59,6 +59,15 @@ class Settings:
     # Anything caught inside this window is a true undo rather than a
     # compensation, which is the difference between a deleted email and an
     # apology for one.
+    # Screening every tool call costs a Model Armor request per call with
+    # prose in it. On by default because the alternative is a guarantee that
+    # only holds for one code path, off for tests and for anyone running
+    # without the API enabled.
+    screen_tool_args: bool = field(
+        default_factory=lambda: os.getenv("PALINODE_SCREEN_TOOL_ARGS", "1").strip().lower()
+        not in {"0", "false", "no"}
+    )
+
     cooling_off_seconds: int = field(
         default_factory=lambda: int(os.getenv("PALINODE_COOLING_OFF_SECONDS", "30"))
     )

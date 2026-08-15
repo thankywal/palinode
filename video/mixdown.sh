@@ -110,7 +110,7 @@ import json, pathlib, sys
 sys.path.insert(0, ".")
 from sound import cue_sheet
 for cue in cue_sheet():
-    print(f"{cue['at']}\t{cue['file']}\t{cue['gain']}")
+    print(f"{cue['at']}\t{cue['file']}\t{cue['gain']}\t{cue['length'] or ''}")
 PY
 
 CUES=$(wc -l < "$OUT/sfx.txt" | tr -d ' ')
@@ -123,10 +123,18 @@ python3 - <<'PY' > "$OUT/sfx.cmd"
 import pathlib
 rows = [l.split("\t") for l in pathlib.Path("audio/build/sfx.txt").read_text().splitlines() if l.strip()]
 inputs, chains, labels = [], [], []
-for i, (at, path, gain) in enumerate(rows):
+for i, row in enumerate(rows):
+    at, path, gain = row[0], row[1], row[2]
+    length = row[3] if len(row) > 3 and row[3] else None
     inputs.append(f'-i "{path}"')
     ms = int(float(at) * 1000)
-    chains.append(f"[{i}:a]adelay={ms}|{ms},volume={gain}dB,aformat=sample_rates=48000:channel_layouts=stereo[s{i}]")
+    # Trimmed first, then faded out over the last third of a second, so a cue
+    # cut short does not end on a click.
+    trim = ""
+    if length:
+        d = float(length)
+        trim = f"atrim=0:{d},afade=t=out:st={max(0.0, d - 0.35):.3f}:d=0.35,"
+    chains.append(f"[{i}:a]{trim}adelay={ms}|{ms},volume={gain}dB,aformat=sample_rates=48000:channel_layouts=stereo[s{i}]")
     labels.append(f"[s{i}]")
 graph = ";".join(chains) + ";" + "".join(labels) + f"amix=inputs={len(rows)}:duration=longest:normalize=0[sfx]"
 print(" ".join(inputs) + ' -filter_complex "' + graph + '" -map "[sfx]"')

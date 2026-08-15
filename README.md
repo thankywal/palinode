@@ -462,6 +462,19 @@ anywhere in this codebase.
 
 ---
 
+## What is a Google product and what is our stand in
+
+Being exact about this matters more than claiming coverage, so it is written
+down in one place: [docs/submission.md](docs/submission.md).
+
+Short version. Model Armor and Cloud Trace are the real services. The agent
+registry, the SPIFFE shaped identity and the inline policy gate are our own
+implementations of ideas that Google's Agent Registry, Agent Identity and
+Agent Gateway also implement, and they are not those products. Three ADK
+`LlmAgent`s make up the supervised fleet; the five part control plane that
+watches them is plain Python, on purpose, because a policy gate that is itself
+an LLM agent is one that can be talked out of its policy.
+
 ## Layout
 
 ```

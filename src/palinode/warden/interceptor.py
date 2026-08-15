@@ -70,6 +70,27 @@ class Warden:
             )
             return decision, record
 
+    # Below this length an argument is an identifier, a flag or an amount, and
+    # there is nothing in it for a prompt filter to find. Above it, somebody
+    # wrote prose and it may not have been us.
+    PROSE = 40
+
+    async def _screen(self, args: dict[str, Any]):
+        """Run the free text arguments past Model Armor. None if there are none."""
+        if not settings.screen_tool_args:
+            return None
+
+        prose = [
+            value for value in args.values()
+            if isinstance(value, str) and len(value) >= self.PROSE
+        ]
+        if not prose:
+            return None
+
+        from .armor import get_armor
+
+        return await get_armor().screen("\n\n".join(prose)[:6000])
+
     async def _evaluate(
         self,
         *,
@@ -95,6 +116,28 @@ class Warden:
                     verdict=Verdict.BLOCK,
                     tier=Tier.T3_UNRECOVERABLE,
                     reason=f"{agent} has no grant for {tool}",
+                ),
+                None,
+            )
+
+        # Model Armor, on the arguments, before anything else looks at them.
+        #
+        # This used to run in one place: the demo's invoice screening path. The
+        # story said untrusted input goes through Model Armor before an agent
+        # sees it, which was true of the invoice and of nothing else, and a
+        # reviewer caught the gap. An agent that reads a document, a webhook or
+        # a customer message and passes it to a tool was never screened at all.
+        #
+        # So it runs here, where every tool call already passes. Only the
+        # free text arguments are sent: an account id is not prose and
+        # screening it wastes a call on something a filter cannot judge.
+        verdict = await self._screen(args)
+        if verdict is not None and verdict.blocked:
+            return (
+                Decision(
+                    verdict=Verdict.BLOCK,
+                    tier=Tier.T3_UNRECOVERABLE,
+                    reason=f"Model Armor: {verdict.describe()}",
                 ),
                 None,
             )

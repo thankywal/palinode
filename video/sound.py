@@ -26,22 +26,27 @@ import pathlib
 HERE = pathlib.Path(__file__).parent
 SFX = HERE / "audio" / "sfx"
 
-# (segment, line index, offset seconds, file, gain dB)
-CUES: list[tuple[str, int, float, str, float]] = [
+# (segment, line index, offset seconds, file, gain dB, optional length)
+#
+# The length is there because several of these run four or five seconds. A
+# whoosh chosen for the half second where something happens is still ringing
+# under the next sentence, which is how 1:47 ended up with a low rumble sitting
+# on nothing. Where a cue carries a length it is trimmed to it and faded.
+CUES: list[tuple] = [
     # --- open ------------------------------------------------------------
     ("01-hook", 1, -0.20, "air-zoom-vacuum", -14),
     # The wordmark arrives on the third line.
     ("01-hook", 2, -0.10, "bass-hit-futuristic", -9),
 
     # --- the two documents ------------------------------------------------
-    ("02-two-invoices", 1, 0.30, "data-scan", -15),      # Gemini starts reading A
+    ("02-two-invoices", 1, 0.30, "data-scan", -15, 3.6),   # Gemini starts reading A
     ("02-two-invoices", 1, 2.20, "ui-select-click", -19),
     ("02-two-invoices", 1, 3.40, "ui-select-click", -19),
     ("02-two-invoices", 1, 4.60, "ui-select-click", -19),
     # Model Armor catches it. This is the one hit in the film that should
     # make somebody sit up.
     ("02-two-invoices", 2, 0.65, "hit-fast-exciting", -8),
-    ("02-two-invoices", 4, 0.30, "data-scan", -15),      # and now B
+    ("02-two-invoices", 4, 0.30, "data-scan", -15, 3.6),   # and now B
     ("02-two-invoices", 4, 2.40, "ui-select-click", -19),
     ("02-two-invoices", 4, 3.60, "ui-select-click", -19),
     ("02-two-invoices", 4, 4.80, "ui-select-click", -19),
@@ -58,9 +63,12 @@ CUES: list[tuple[str, int, float, str, float]] = [
     ("03-fleet-acts", 0, 9.10, "bass-hit-short", -12),
 
     # --- sentinel decides -------------------------------------------------
-    ("04-sentinel", 1, -0.30, "power-up-static", -14),
-    ("04-sentinel", 2, 3.10, "power-up-electronic", -12),
-    ("04-sentinel", 2, 4.30, "impact-deep-whoosh", -10),
+    ("04-sentinel", 1, -0.30, "power-up-static", -14, 2.0),
+    ("04-sentinel", 2, 3.10, "power-up-electronic", -12, 2.2),
+    # There was a deep whoosh here too. It is four seconds long, so it was
+    # still rumbling under 1:47 with nothing on screen to justify it. The
+    # power up already marks the moment Sentinel fires; two low sounds
+    # overlapping only made the room feel muddy.
 
     # --- what came back ---------------------------------------------------
     ("05-what-came-back", 0, 1.90, "ui-success-soft", -17),
@@ -70,13 +78,13 @@ CUES: list[tuple[str, int, float, str, float]] = [
 
     # --- what did not -----------------------------------------------------
     # No confirmation tone anywhere in this segment. Nothing was confirmed.
-    ("06-what-did-not", 0, 0.10, "impact-deep-whoosh", -13),
+    ("06-what-did-not", 0, 0.10, "impact-deep-whoosh", -13, 3.0),
     ("06-what-did-not", 1, 5.60, "bass-hit-short", -10),
 
     # --- weeks later ------------------------------------------------------
     ("07-weeks-later", 1, -0.25, "swoosh-quick", -16),
     ("07-weeks-later", 2, -0.25, "swoosh-quick", -16),
-    ("07-weeks-later", 2, 2.60, "data-compute", -15),
+    ("07-weeks-later", 2, 2.60, "data-compute", -15, 2.4),
     ("07-weeks-later", 3, -0.25, "swoosh-quick", -16),
     ("07-weeks-later", 3, 3.20, "bass-hit-futuristic", -11),
 
@@ -107,7 +115,9 @@ def cue_sheet() -> list[dict]:
     seg = {s["id"]: s for s in timing["segments"]}
 
     sheet = []
-    for segment, line, offset, name, gain in CUES:
+    for cue in CUES:
+        segment, line, offset, name, gain = cue[:5]
+        length = cue[5] if len(cue) > 5 else None
         if segment not in seg:
             raise SystemExit(f"cue points at unknown segment {segment}")
         lines = seg[segment]["lines"]
@@ -120,6 +130,7 @@ def cue_sheet() -> list[dict]:
             "at": round(max(0.0, lines[line]["start"] + offset), 3),
             "file": str(path.relative_to(HERE)),
             "gain": gain,
+            "length": length,
             "why": f"{segment} line {line + 1}",
         })
 
@@ -129,6 +140,7 @@ def cue_sheet() -> list[dict]:
 
 if __name__ == "__main__":
     for cue in cue_sheet():
+        cut = f"cut to {cue['length']}s" if cue["length"] else ""
         print(f"  {cue['at']:>7.2f}s  {cue['gain']:>4} dB  "
-              f"{pathlib.Path(cue['file']).stem:<22} {cue['why']}")
+              f"{pathlib.Path(cue['file']).stem:<22} {cue['why']:<26} {cut}")
     print(f"\n  {len(CUES)} cues")

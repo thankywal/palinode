@@ -41,9 +41,25 @@ TAKE=$OUT/capture/seg-dashboard.webm
 
 W=3840
 H=2160
-# VideoToolbox takes a bitrate rather than a quality target. This is far more
-# than 4K needs and that is the point.
-VENC=(-c:v h264_videotoolbox -b:v 80M -maxrate 95M -bufsize 160M -profile:v high -allow_sw 1)
+
+# VideoToolbox takes a bitrate rather than a quality target.
+#
+# The first version of this asked for 80 Mbps with a 160 Mbit buffer, which
+# let one second of console text spend 63 Mbps. The mean was 12, so the file
+# looked reasonable and played badly: a laptop decoding a spike like that
+# drops the audio rather than the picture, and the film went silent partway
+# through for at least one viewer. The buffer is now one second, so the peak
+# is the ceiling rather than an average of a much larger burst.
+#
+# yuv420p rather than what VideoToolbox picks on its own. It emits yuvj420p,
+# full range, which is legal and which a good many players read as limited
+# range anyway and show washed out.
+VENC=(
+  -c:v h264_videotoolbox
+  -b:v 34M -maxrate 40M -bufsize 40M
+  -profile:v high -allow_sw 1
+  -pix_fmt yuv420p
+)
 
 [ -f "$SOUND" ] || { echo "no soundtrack, run ./mixdown.sh first"; exit 1; }
 [ -f "$SHOTS" ] || { echo "no shot list, run python plan.py first"; exit 1; }
@@ -65,6 +81,8 @@ echo "rendering the cards at 4K"
 npx remotion render Intro    "$OUT/intro.mp4"    --scale=2 --log=error
 npx remotion render Invoices "$OUT/invoices.mp4" --scale=2 --log=error
 npx remotion render Sweeper  "$OUT/sweeper.mp4"  --scale=2 --log=error
+npx remotion render Review     "$OUT/review.mp4"     --scale=2 --log=error
+npx remotion render Disclosure "$OUT/disclosure.mp4" --scale=2 --log=error
 npx remotion render Outro    "$OUT/outro.mp4"    --scale=2 --log=error
 fi
 
@@ -144,8 +162,17 @@ ffmpeg -nostdin -v error -y -i "$WORK/picture.mp4" -i "$SOUND" \
   -map 0:v -map 1:a -c:v copy -c:a aac -b:a 320k -shortest \
   -movflags +faststart "$OUT/palinode-demo.mp4"
 
+# A 1080p copy for watching. The 4K is the master and the thing to upload;
+# scrubbing around in it on a laptop is what caused the report of no audio.
+echo "making a 1080p review copy"
+ffmpeg -nostdin -v error -y -i "$OUT/palinode-demo.mp4" \
+  -vf "scale=1920:1080:flags=lanczos" \
+  -c:v h264_videotoolbox -b:v 10M -maxrate 12M -bufsize 12M -profile:v high -pix_fmt yuv420p \
+  -c:a aac -b:a 256k -movflags +faststart "$OUT/palinode-demo-1080p.mp4"
+
 echo
 echo "  $OUT/palinode-demo.mp4"
-ffprobe -v error -show_entries format=duration,size,bit_rate \
-  -show_entries stream=codec_name,width,height,r_frame_rate \
-  -of default=noprint_wrappers=1 "$OUT/palinode-demo.mp4"
+for f in "$OUT/palinode-demo.mp4" "$OUT/palinode-demo-1080p.mp4"; do
+  printf "  %-34s " "$(basename "$f")"
+  ffprobe -v error -show_entries format=duration,size,bit_rate -of csv=p=0 "$f"
+done
