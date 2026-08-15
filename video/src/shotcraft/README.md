@@ -1,6 +1,6 @@
 # Vendored from video-shotcraft
 
-`PageCam.tsx`, `shake.ts` and `motion.ts` are taken unmodified from
+`PageCam.tsx`, `Motion.tsx`, `shake.ts` and `physics.ts` are taken unmodified from
 
     https://github.com/Vincentwei1021/video-shotcraft
 
@@ -35,3 +35,11 @@ that footage is cut outside Remotion.
 `ConsoleShot.tsx` and `consoleShots.ts` are ours. The camera path, the scrim,
 the framing of each capture and every caption are written here. Nothing from
 the upstream template, its brand assets or its example content is used.
+
+## One local change
+
+Upstream calls the velocity helpers `motion.ts` and the easing vocabulary
+`Motion.tsx`. Two files whose names differ only in case are fine on Linux and
+ambiguous on macOS, where `import './shotcraft/Motion'` quietly resolved to the
+wrong one and every easing came back undefined. The velocity helpers are
+`physics.ts` here. Nothing inside either file changed.

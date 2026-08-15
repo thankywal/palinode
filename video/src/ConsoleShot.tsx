@@ -61,18 +61,25 @@ export const ConsoleShot: React.FC<ConsoleShotProps> = ({
   // and some of these lines are three seconds and some are eleven.
   const end = durationInFrames;
   const [fx, fy] = focus;
+
+  // Whatever it takes to cover the frame. PageCam paints its own paper colour
+  // wherever the page is not, and a capture wider than 16 by 9 left a band of
+  // cream under it that looked like the shot had fallen short. Every zoom
+  // below is a multiple of this rather than an absolute, so a strip and a full
+  // page get the same move and both fill.
+  const fill = Math.max(1, 1080 / pageH);
   const keys: CamKey[] = [
-    {frame: 0, cx: 960, cy: pageH / 2, zoom: 1.0, rotY: -3.2, rotX: 1.4, persp: 2600},
+    {frame: 0, cx: 960, cy: pageH / 2, zoom: fill, rotY: -3.2, rotX: 1.4, persp: 2600},
     {
       frame: Math.round(end * 0.55),
       cx: (960 + fx) / 2,
       cy: (pageH / 2 + fy) / 2,
-      zoom: 1.13,
+      zoom: fill * 1.09,
       rotY: -1.1,
       rotX: 0.5,
       persp: 2600,
     },
-    {frame: end, cx: fx, cy: fy, zoom: 1.26, rotY: 0, rotX: 0, persp: 2600},
+    {frame: end, cx: fx, cy: fy, zoom: fill * 1.17, rotY: 0, rotX: 0, persp: 2600},
   ];
 
   // Deterministic drift, so the frame is never perfectly locked. Small: this

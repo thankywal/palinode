@@ -22,8 +22,8 @@ const AMBER = theme.amber;
 
 /** A 1568x764 capture, which is what the browser window gave us. */
 const WIDE = 1568 / 764;
-/** The scheduler shot, cropped down to the row that matters. */
-const STRIP = 1512 / 345;
+/** The scheduler shot, uncropped. Near enough to the frame already. */
+const STRIP = 1512 / 801;
 
 export const CONSOLE_SHOTS: Record<string, ConsoleShotProps> = {
   scheduler: {
@@ -35,7 +35,7 @@ export const CONSOLE_SHOTS: Record<string, ConsoleShotProps> = {
       'Hourly, against the deployed service. Last run 14:00:21, next run 15:00:02, and nobody was watching either of them.',
     accent: VIOLET,
     // The job row: name, status, frequency, target.
-    focus: [860, 300],
+    focus: [730, 380],
     aspect: STRIP,
   },
   stripe: {

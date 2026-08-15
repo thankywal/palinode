@@ -11,6 +11,7 @@ import {
 import {Backdrop} from './Backdrop';
 import {font, mono, theme} from './theme';
 import timing from './timing.json';
+import {ScanRead, ScanTarget} from './ScanRead';
 
 /**
  * The two documents, read and screened.
@@ -72,6 +73,7 @@ const Card: React.FC<{
   changed: string;
   page: string;
   block: string;
+  targets: ScanTarget[];
   blockHit: boolean;
   decision: string;
   caught: boolean;
@@ -87,6 +89,7 @@ const Card: React.FC<{
   page,
   block,
   blockHit,
+  targets,
   decision,
   caught,
 }) => {
@@ -114,6 +117,7 @@ const Card: React.FC<{
       <div
         style={{
           width: 452,
+          position: 'relative',
           borderRadius: 10,
           overflow: 'hidden',
           border: '1px solid rgba(255,255,255,.16)',
@@ -122,6 +126,13 @@ const Card: React.FC<{
         }}
       >
         <Img src={staticFile(file)} style={{width: '100%', display: 'block'}} />
+        <ScanRead
+          from={readAt}
+          to={verdictAt}
+          targets={targets}
+          accent="#1D4ED8"
+          accentRgb="29,78,216"
+        />
       </div>
 
       <div style={{flex: 1, display: 'flex', flexDirection: 'column'}}>
@@ -255,6 +266,11 @@ export const Invoices: React.FC = () => {
             blockHit
             decision="Blocked. The fleet never sees it."
             caught
+            targets={[
+              {x: 0.565, y: 0.410, w: 0.375, h: 0.036, label: 'AMOUNT · USD 1,180.00', side: 'left'},
+              {x: 0.065, y: 0.498, w: 0.44, h: 0.076, label: 'REMIT TO · acct-northwind-01', side: 'above'},
+              {x: 0.065, y: 0.580, w: 0.875, h: 0.082, label: 'ADDRESSED TO THE PROCESSOR'},
+            ]}
           />
           <Card
             at={readB}
@@ -270,6 +286,11 @@ export const Invoices: React.FC = () => {
             blockHit={false}
             decision="Passed. There is no injection in it to find."
             caught={false}
+            targets={[
+              {x: 0.565, y: 0.457, w: 0.375, h: 0.036, label: 'AMOUNT · USD 4,200.00', side: 'left'},
+              {x: 0.065, y: 0.540, w: 0.875, h: 0.066, label: 'BANKING DETAILS CHANGED', side: 'above'},
+              {x: 0.065, y: 0.612, w: 0.40, h: 0.086, label: 'REMIT TO · acct-unknown-77'},
+            ]}
           />
         </div>
 
