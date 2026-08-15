@@ -18,7 +18,14 @@ import {fileURLToPath} from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-/** Native size of every capture. Displayed one to one, never scaled. */
+/**
+ * Native size of a capture. Displayed one to one, never scaled.
+ *
+ * Most of these came out of the same window so they share a size, but the
+ * window moved between sessions, and stretching one of them to match the rest
+ * is exactly the resampling this file exists to avoid. So a slide may carry
+ * its own.
+ */
 const SHOT_W = 1568;
 const SHOT_H = 764;
 
@@ -35,6 +42,7 @@ const AMBER = '#FBBF24';
 const SLIDES = [
   {
     file: 'p1-stripe.jpg',
+    name: 'stripe',
     group: 'IT WAS REAL',
     index: '01',
     title: 'Stripe',
@@ -43,6 +51,7 @@ const SLIDES = [
   },
   {
     file: 'p2-github.jpg',
+    name: 'github',
     group: 'IT WAS REAL',
     index: '02',
     title: 'GitHub',
@@ -51,6 +60,7 @@ const SLIDES = [
   },
   {
     file: 'p7-slack.jpg',
+    name: 'slack',
     group: 'IT WAS REAL',
     index: '03',
     title: 'Slack',
@@ -58,7 +68,20 @@ const SLIDES = [
     accent: SKY,
   },
   {
+    file: 'p8-scheduler.jpg',
+    name: 'scheduler',
+    w: 1512,
+    h: 801,
+    group: 'WEEKS LATER',
+    index: '04',
+    title: 'Cloud Scheduler',
+    caption:
+      'Hourly, against the deployed service. Last run 14:00:21, next run 15:00:02, and nobody was watching either of them.',
+    accent: VIOLET,
+  },
+  {
     file: 'p3-cloudrun.jpg',
+    name: 'cloudrun',
     group: 'GOOGLE CLOUD',
     index: '04',
     title: 'Cloud Run',
@@ -67,6 +90,7 @@ const SLIDES = [
   },
   {
     file: 'p6-logs.jpg',
+    name: 'logs',
     group: 'GOOGLE CLOUD',
     index: '05',
     title: 'The logs',
@@ -76,6 +100,7 @@ const SLIDES = [
   },
   {
     file: 'p5-trace.jpg',
+    name: 'trace',
     group: 'GOOGLE CLOUD',
     index: '06',
     title: 'Cloud Trace',
@@ -85,6 +110,7 @@ const SLIDES = [
   },
   {
     file: 'p4-firestore.jpg',
+    name: 'firestore',
     group: 'GOOGLE CLOUD',
     index: '07',
     title: 'Firestore',
@@ -94,7 +120,7 @@ const SLIDES = [
   },
 ];
 
-const page = (slide, dataUri) => `<!doctype html>
+const page = (slide, dataUri, w, h) => `<!doctype html>
 <html><head><meta charset="utf-8"><style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { width:1920px; height:1080px; }
@@ -115,7 +141,7 @@ const page = (slide, dataUri) => `<!doctype html>
     padding:72px 0 0;
   }
   .head {
-    width:${SHOT_W}px; display:flex; align-items:flex-end; gap:22px; margin-bottom:22px;
+    width:${w}px; display:flex; align-items:flex-end; gap:22px; margin-bottom:22px;
   }
   .bar { width:6px; height:62px; border-radius:4px; background:${slide.accent}; }
   .idx {
@@ -129,7 +155,7 @@ const page = (slide, dataUri) => `<!doctype html>
   }
   /* One to one. No width, no height, no object-fit, nothing that resamples. */
   .shot {
-    width:${SHOT_W}px; height:${SHOT_H}px;
+    width:${w}px; height:${h}px;
     border-radius:12px; overflow:hidden;
     border:1px solid rgba(255,255,255,.16);
     box-shadow:0 30px 90px rgba(0,0,0,.55);
@@ -146,16 +172,19 @@ const page = (slide, dataUri) => `<!doctype html>
       </div>
       <div class="cap">${slide.caption}</div>
     </div>
-    <div class="shot"><img src="${dataUri}" width="${SHOT_W}" height="${SHOT_H}"></div>
+    <div class="shot"><img src="${dataUri}" width="${w}" height="${h}"></div>
   </div>
 </body></html>`;
 
 mkdirSync(join(HERE, 'slides'), {recursive: true});
 
-SLIDES.forEach((slide, i) => {
+SLIDES.forEach((slide) => {
   const bytes = readFileSync(join(HERE, slide.file));
   const uri = `data:image/jpeg;base64,${bytes.toString('base64')}`;
-  const name = `s${String(i + 1).padStart(2, '0')}.html`;
-  writeFileSync(join(HERE, 'slides', name), page(slide, uri));
+  const name = `${slide.name}.html`;
+  writeFileSync(
+    join(HERE, 'slides', name),
+    page(slide, uri, slide.w ?? SHOT_W, slide.h ?? SHOT_H)
+  );
   console.log(`  wrote ${name}  ${slide.title}`);
 });

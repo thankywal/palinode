@@ -98,7 +98,23 @@ SEGMENTS = [
         ],
     },
     {
-        "id": "07-it-was-real",
+        "id": "07-weeks-later",
+        "visual": "the cold case, and the scheduled sweep",
+        "lines": [
+            "That run was caught in twenty seconds. The other kind takes three "
+            "weeks.",
+            "This one is twenty three days old. Every action ordinary. Nothing "
+            "irreversible. Sentinel scores it at zero, and it is right to, "
+            "because at the time there was nothing wrong with it.",
+            "Then the bank reports the vendor. Nothing about the run changed. "
+            "What changed is what we know.",
+            "Cloud Scheduler wakes the Sweeper on the hour, with no request in "
+            "flight and nobody waiting for an answer, and it takes back a "
+            "three week old fraud on its own.",
+        ],
+    },
+    {
+        "id": "08-it-was-real",
         "visual": "stripe, github, slack",
         "lines": [
             "None of that was simulated. Here is the Stripe dashboard, with "
@@ -110,7 +126,7 @@ SEGMENTS = [
         ],
     },
     {
-        "id": "08-google-cloud",
+        "id": "09-google-cloud",
         "visual": "cloud run, logs, trace, firestore",
         "lines": [
             "Here is where it runs. Cloud Run, scaling to zero.",
@@ -122,7 +138,7 @@ SEGMENTS = [
         ],
     },
     {
-        "id": "09-close",
+        "id": "10-close",
         "visual": "outro numbers",
         "lines": [
             "Connecting those real systems broke three things a simulator had "

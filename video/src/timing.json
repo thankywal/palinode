@@ -12,6 +12,15 @@
     "verdictB": 1291,
     "punchline": 1351
   },
+  "sweeper": {
+    "durationInFrames": 878,
+    "beats": [
+      0,
+      120,
+      452,
+      605
+    ]
+  },
   "outro": {
     "durationInFrames": 414,
     "second": 224

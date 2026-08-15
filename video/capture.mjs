@@ -15,7 +15,14 @@
  */
 
 import {chromium} from 'playwright';
-import {mkdirSync, readdirSync, renameSync, statSync, readFileSync} from 'node:fs';
+import {
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  statSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import {join, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -27,20 +34,18 @@ const OUT = join(HERE, 'out/capture');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** How long each narration segment runs, so the picture can be cut to it. */
-function narrationSeconds() {
+function narration() {
   try {
-    const timing = JSON.parse(
-      readFileSync(join(HERE, 'audio/vo/timing.json'), 'utf8')
-    );
-    return Object.fromEntries(timing.map((t) => [t.id, t.seconds]));
+    return JSON.parse(readFileSync(join(HERE, 'audio/vo/timing.json'), 'utf8'));
   } catch {
     console.warn('  no timing.json, falling back to estimates');
-    return {};
+    return {segments: [], gap_segment: 0.55};
   }
 }
 
-const VO = narrationSeconds();
-const secs = (id, fallback) => (VO[id] ?? fallback) * 1000;
+const VO = narration();
+const seg = Object.fromEntries((VO.segments ?? []).map((s) => [s.id, s]));
+const secs = (id, fallback) => ((seg[id] ?? {}).seconds ?? fallback) * 1000;
 
 async function segment(name, steps) {
   mkdirSync(OUT, {recursive: true});
@@ -64,6 +69,16 @@ async function segment(name, steps) {
   });
   const page = await context.newPage();
 
+  // When things happened inside the take, in take time. The film needs to know
+  // where the fleet run starts, because everything before it is the screening
+  // and the screening has its own card. Guessing that offset put the cut in
+  // the middle of an empty board.
+  const t0 = Date.now();
+  const marks = {};
+  const mark = (label) => {
+    marks[label] = Number(((Date.now() - t0) / 1000).toFixed(2));
+  };
+
   // Not networkidle. The dashboard polls every 350ms, so the network is never
   // idle and the wait burns the full timeout into the front of every clip.
   // pace=2 doubles the reveal stagger, and only the reveal. The narration
@@ -75,7 +90,7 @@ async function segment(name, steps) {
   await page.addStyleTag({content: 'html { zoom: 2 }'});
   await wait(900);
 
-  await steps(page);
+  await steps(page, mark);
 
   await context.close();
   await browser.close();
@@ -89,6 +104,8 @@ async function segment(name, steps) {
     renameSync(join(OUT, videos[0].f), join(OUT, `seg-${name}.webm`));
     console.log(`  captured seg-${name}.webm`);
   }
+  writeFileSync(join(OUT, 'marks.json'), JSON.stringify(marks, null, 2));
+  console.log('  marks', JSON.stringify(marks));
 }
 
 async function main() {
@@ -98,21 +115,32 @@ async function main() {
   // Segments 03 to 06, in one take. The fleet acts, Sentinel decides on its
   // own, the reversal runs, and the disclosure lands. Cutting between those
   // would invite the question of what happened in the cut.
+  // Four segments and the three breaths between them, plus a little over, so
+  // the tail of the take is never the thing that runs out.
+  const gaps = 3 * (VO.gap_segment ?? 0.55) * 1000;
   const budget =
     secs('03-fleet-acts', 17.5) +
     secs('04-sentinel', 23) +
     secs('05-what-came-back', 19) +
-    secs('06-what-did-not', 12);
+    secs('06-what-did-not', 12) +
+    gaps +
+    4000;
 
-  await segment('dashboard', async (page) => {
-    // Screen the invoices first so the Model Armor panel is already on screen
-    // when the fleet runs. The voiceover has covered this by now.
+  await segment('dashboard', async (page, mark) => {
+    // Screen the invoices first so the Model Armor panel is already on screen,
+    // with both documents and both verdicts, when the fleet runs. The
+    // voiceover has covered all of that by now.
     await page.click('#screen');
-    await page.waitForSelector('.inv', {timeout: 40000});
-    await wait(1500);
+    await page.waitForSelector('.inv', {timeout: 60000});
+    await page.waitForSelector('.scan img', {timeout: 60000});
+    await wait(2500);
 
     const started = Date.now();
+    mark('fleet');
 
+    // The board is empty between this click and the first row landing, and
+    // the narration is already naming the actions, so the wait for the first
+    // row is the wait, not a fixed pause on nothing.
     await page.click('#seed');
     await page.waitForSelector('.node', {timeout: 40000});
 

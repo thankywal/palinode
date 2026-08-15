@@ -1,7 +1,7 @@
 {
   "gap_line": 0.3,
   "gap_segment": 0.55,
-  "total": 190.0,
+  "total": 219.25,
   "segments": [
     {
       "id": "01-hook",
@@ -166,79 +166,111 @@
       ]
     },
     {
-      "id": "07-it-was-real",
-      "visual": "stripe, github, slack",
+      "id": "07-weeks-later",
+      "visual": "the cold case, and the scheduled sweep",
       "start": 138.6,
+      "seconds": 28.7,
+      "lines": [
+        {
+          "file": "07-weeks-later-1.wav",
+          "text": "That run was caught in twenty seconds. The other kind takes three weeks.",
+          "start": 138.6,
+          "seconds": 3.7
+        },
+        {
+          "file": "07-weeks-later-2.wav",
+          "text": "This one is twenty three days old. Every action ordinary. Nothing irreversible. Sentinel scores it at zero, and it is right to, because at the time there was nothing wrong with it.",
+          "start": 142.6,
+          "seconds": 10.775
+        },
+        {
+          "file": "07-weeks-later-3.wav",
+          "text": "Then the bank reports the vendor. Nothing about the run changed. What changed is what we know.",
+          "start": 153.675,
+          "seconds": 4.8
+        },
+        {
+          "file": "07-weeks-later-4.wav",
+          "text": "Cloud Scheduler wakes the Sweeper on the hour, with no request in flight and nobody waiting for an answer, and it takes back a three week old fraud on its own.",
+          "start": 158.775,
+          "seconds": 8.525
+        }
+      ]
+    },
+    {
+      "id": "08-it-was-real",
+      "visual": "stripe, github, slack",
+      "start": 167.85,
       "seconds": 15.3,
       "lines": [
         {
-          "file": "07-it-was-real-1.wav",
+          "file": "08-it-was-real-1.wav",
           "text": "None of that was simulated. Here is the Stripe dashboard, with the charge and the refund.",
-          "start": 138.6,
+          "start": 167.85,
           "seconds": 4.575
         },
         {
-          "file": "07-it-was-real-2.wav",
+          "file": "08-it-was-real-2.wav",
           "text": "Here is the GitHub repository, where every approve commit is followed by a revert.",
-          "start": 143.475,
+          "start": 172.725,
           "seconds": 5.325
         },
         {
-          "file": "07-it-was-real-3.wav",
+          "file": "08-it-was-real-3.wav",
           "text": "And here is the Slack channel, with the message gone and the correction standing in its place.",
-          "start": 149.1,
+          "start": 178.35,
           "seconds": 4.8
         }
       ]
     },
     {
-      "id": "08-google-cloud",
+      "id": "09-google-cloud",
       "visual": "cloud run, logs, trace, firestore",
-      "start": 154.45,
+      "start": 183.7,
       "seconds": 21.2,
       "lines": [
         {
-          "file": "08-google-cloud-1.wav",
+          "file": "09-google-cloud-1.wav",
           "text": "Here is where it runs. Cloud Run, scaling to zero.",
-          "start": 154.45,
+          "start": 183.7,
           "seconds": 2.9
         },
         {
-          "file": "08-google-cloud-2.wav",
+          "file": "09-google-cloud-2.wav",
           "text": "The logs, showing real calls out to Stripe, GitHub and Slack.",
-          "start": 157.65,
+          "start": 186.9,
           "seconds": 3.075
         },
         {
-          "file": "08-google-cloud-3.wav",
+          "file": "09-google-cloud-3.wav",
           "text": "Cloud Trace, carrying our own OpenTelemetry spans.",
-          "start": 161.025,
+          "start": 190.275,
           "seconds": 3.375
         },
         {
-          "file": "08-google-cloud-4.wav",
+          "file": "09-google-cloud-4.wav",
           "text": "And Firestore, holding a causality graph where every entry names a SPIFFE actor and commits to the one before it, so no action can be edited after the fact.",
-          "start": 164.7,
+          "start": 193.95,
           "seconds": 10.95
         }
       ]
     },
     {
-      "id": "09-close",
+      "id": "10-close",
       "visual": "outro numbers",
-      "start": 176.2,
+      "start": 205.45,
       "seconds": 13.8,
       "lines": [
         {
-          "file": "09-close-1.wav",
+          "file": "10-close-1.wav",
           "text": "Connecting those real systems broke three things a simulator had been quietly agreeing with for days. That is rather the point.",
-          "start": 176.2,
+          "start": 205.45,
           "seconds": 7.15
         },
         {
-          "file": "09-close-2.wav",
+          "file": "10-close-2.wav",
           "text": "Palinode is not the agent that does the work. It is the one that has to be right about what cannot be taken back.",
-          "start": 183.65,
+          "start": 212.9,
           "seconds": 6.35
         }
       ]

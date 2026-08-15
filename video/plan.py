@@ -23,9 +23,20 @@ import pathlib
 HERE = pathlib.Path(__file__).parent
 FPS = 30
 
-# Where the dashboard take actually starts. The recorder runs before the page
-# does, so the first half second of it is the white of about:blank.
-TAKE_IN = 0.70
+def take_in() -> float:
+    """Where the fleet run starts inside the dashboard take.
+
+    The take opens on the screening, which has its own card in the film, so
+    the dashboard section starts at the moment the fleet was told to run.
+    capture.mjs writes down when that was rather than leaving it to be
+    guessed, because guessing it put the cut in the middle of an empty board.
+    """
+    marks = HERE / "out" / "capture" / "marks.json"
+    if marks.is_file():
+        return float(json.loads(marks.read_text()).get("fleet", 0.70))
+    # No marks means an older take, whose only lead in was the half second of
+    # about:blank the recorder catches before the page paints.
+    return 0.70
 
 
 def frames(seconds: float) -> int:
@@ -33,6 +44,7 @@ def frames(seconds: float) -> int:
 
 
 def main() -> None:
+    TAKE_IN = take_in()
     timing = json.loads((HERE / "audio" / "vo" / "timing.json").read_text())
     seg = {s["id"]: s for s in timing["segments"]}
     total = timing["total"]
@@ -50,14 +62,18 @@ def main() -> None:
          "crop=1920:1080:940:170"),
         (seg["06-what-did-not"]["start"], "02c-dash-disclosure", "take",
          "crop=1920:1080:1920:1080"),
-        (line_start("07-it-was-real", 0), "03-stripe", "still", "s01"),
-        (line_start("07-it-was-real", 1), "04-github", "still", "s02"),
-        (line_start("07-it-was-real", 2), "05-slack", "still", "s03"),
-        (line_start("08-google-cloud", 0), "06-cloudrun", "still", "s04"),
-        (line_start("08-google-cloud", 1), "07-logs", "still", "s05"),
-        (line_start("08-google-cloud", 2), "08-trace", "still", "s06"),
-        (line_start("08-google-cloud", 3), "09-firestore", "still", "s07"),
-        (seg["09-close"]["start"], "10-outro", "remotion", "Outro"),
+        # The cold case, in four beats: the run, the score of zero, the
+        # report that arrives later, and the scheduler acting on it.
+        (seg["07-weeks-later"]["start"], "03-sweeper", "remotion", "Sweeper"),
+        (line_start("07-weeks-later", 3), "04-scheduler", "still", "scheduler"),
+        (line_start("08-it-was-real", 0), "05-stripe", "still", "stripe"),
+        (line_start("08-it-was-real", 1), "06-github", "still", "github"),
+        (line_start("08-it-was-real", 2), "07-slack", "still", "slack"),
+        (line_start("09-google-cloud", 0), "08-cloudrun", "still", "cloudrun"),
+        (line_start("09-google-cloud", 1), "09-logs", "still", "logs"),
+        (line_start("09-google-cloud", 2), "10-trace", "still", "trace"),
+        (line_start("09-google-cloud", 3), "11-firestore", "still", "firestore"),
+        (seg["10-close"]["start"], "12-outro", "remotion", "Outro"),
         (total, "", "", ""),
     ]
 
@@ -75,7 +91,8 @@ def main() -> None:
     (HERE / "out" / "shots.tsv").write_text("\n".join(rows) + "\n")
 
     # What the cards animate to. Frames, relative to each card's own start.
-    hook, inv, close = seg["01-hook"], seg["02-two-invoices"], seg["09-close"]
+    hook, inv, close = seg["01-hook"], seg["02-two-invoices"], seg["10-close"]
+    sweep = seg["07-weeks-later"]
 
     def rel(segment: dict, n: int) -> int:
         return frames(segment["lines"][n]["start"] - segment["start"])
@@ -98,6 +115,12 @@ def main() -> None:
             "readB": rel(inv, 4),
             "verdictB": rel(inv, 5),
             "punchline": rel(inv, 5) + 60,
+        },
+        "sweeper": {
+            "durationInFrames": frames(
+                seg["08-it-was-real"]["start"] - sweep["start"]
+            ),
+            "beats": [rel(sweep, n) for n in range(len(sweep["lines"]))],
         },
         "outro": {
             "durationInFrames": frames(total - close["start"]),

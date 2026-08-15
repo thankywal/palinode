@@ -42,6 +42,7 @@ mkdir -p "$WORK"
 echo "rendering the cards"
 npx remotion render Intro    "$OUT/intro.mp4"    --log=error
 npx remotion render Invoices "$OUT/invoices.mp4" --log=error
+npx remotion render Sweeper  "$OUT/sweeper.mp4"  --log=error
 npx remotion render Outro    "$OUT/outro.mp4"    --log=error
 
 # ------------------------------------------------------------ console slides

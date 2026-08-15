@@ -30,6 +30,11 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 PAGE_W, PAGE_H = 1000, 1400
 
+# Rendered at twice the page size. The film shows the document about 450 pixels
+# wide in a 1920 frame, and a 1000 pixel source downscaled to that has nothing
+# left in the body text. At 2x there is detail to give away.
+SCALE = 2
+
 BODY = """
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   html, body {{ width:{w}px; height:{h}px; }}
@@ -203,6 +208,7 @@ def main() -> None:
                 CHROME, "--headless", "--disable-gpu",
                 f"--screenshot={OUT / f'{key}.png'}",
                 f"--window-size={PAGE_W},{PAGE_H}",
+                f"--force-device-scale-factor={SCALE}",
                 "--hide-scrollbars", "--allow-file-access-from-files", str(html),
             ],
             check=True, capture_output=True,
