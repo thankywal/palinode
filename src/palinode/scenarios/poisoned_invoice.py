@@ -108,10 +108,47 @@ async def screen(invoice_key: str = "quiet") -> dict:
     that passes.
     """
     from ..warden.armor import get_armor
+    from ..warden.vision import get_reader
     from .invoices import INVOICES
 
     invoice = INVOICES.get(invoice_key, INVOICES["quiet"])
-    verdict = await get_armor().screen(invoice.text)
+
+    # Gemini reads the page first, and Model Armor screens what it read.
+    # Armor takes text, so something has to turn the document into text, and
+    # in production that something is not a developer pasting a paragraph into
+    # a constant. If the read fails we fall back to the transcript rather than
+    # screening nothing, because a screening step that silently stops
+    # screening is worse than one that is simply unavailable.
+    read = None
+    text = invoice.text
+    if invoice.image.is_file():
+        read = await get_reader().read(invoice.image.read_bytes())
+        if read.ok and read.text:
+            text = read.text
+
+    armor = get_armor()
+    page = await armor.screen(text)
+
+    # Screening the page alone was not enough, and finding that out is the
+    # reason this pipeline has two steps instead of one.
+    #
+    # The excerpt this demo used to screen was about two hundred characters and
+    # was almost entirely the injection. Model Armor caught it at HIGH. The
+    # real document is a thousand characters of ordinary invoice with the same
+    # words sitting near the bottom, and screened whole it comes back
+    # NO_MATCH_FOUND. Nothing about the attack changed. What changed is how
+    # much unremarkable text was around it.
+    #
+    # So whatever the reader found addressed to the processor is screened on
+    # its own as well, and the worse of the two verdicts is the decision. That
+    # is what the extraction step is for: the highest risk fragment of a
+    # document should not have to compete with the rest of the page for a
+    # detector's attention.
+    block = None
+    if read is not None and read.instructions_to_processor.strip():
+        block = await armor.screen(read.instructions_to_processor)
+
+    verdict = block if (block is not None and block.blocked) else page
 
     return {
         "invoice": invoice.key,
@@ -120,6 +157,10 @@ async def screen(invoice_key: str = "quiet") -> dict:
         "armor": verdict.as_dict(),
         "blocked": verdict.blocked,
         "describe": verdict.describe(),
+        "armor_page": page.as_dict(),
+        "armor_block": block.as_dict() if block is not None else None,
+        "read": read.as_dict() if read is not None else None,
+        "image": f"/demo/invoice/{invoice.key}.png",
     }
 
 

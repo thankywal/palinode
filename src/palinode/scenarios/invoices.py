@@ -9,11 +9,19 @@ no injection in it to catch. It is a correct looking invoice with the bank
 details changed, which is what most real invoice fraud actually is.
 
 That difference is the reason this project exists, so the demo shows both.
+
+Each of these also exists as a rendered document under assets/invoices, which
+is what the live path reads. An invoice arrives as a page, not as a paragraph,
+and the step where something has to look at it is the step a real deployment
+cannot skip.
 """
 
 from __future__ import annotations
 
+import pathlib
 from dataclasses import dataclass
+
+ASSETS = pathlib.Path(__file__).parent.parent / "assets" / "invoices"
 
 
 @dataclass(frozen=True)
@@ -23,6 +31,16 @@ class Invoice:
     text: str
     expected_armor: str
     note: str
+
+    @property
+    def image(self) -> pathlib.Path:
+        """The document, as it would actually arrive.
+
+        The text above is what a person would read off this page. It is kept
+        because the tests need something deterministic to screen, and because
+        a demo that cannot run without a model is a demo that cannot run.
+        """
+        return ASSETS / f"{self.key}.png"
 
 
 LOUD = Invoice(

@@ -203,6 +203,17 @@ async def slack_channels() -> dict:
     return await slack_live.channels()
 
 
+@app.get("/demo/invoice/{invoice_key}.png")
+async def invoice_image(invoice_key: str):
+    """The document itself, so the dashboard can show what was read."""
+    from ..scenarios.invoices import INVOICES
+
+    invoice = INVOICES.get(invoice_key)
+    if invoice is None or not invoice.image.is_file():
+        raise HTTPException(status_code=404, detail="no such invoice")
+    return FileResponse(invoice.image, media_type="image/png")
+
+
 @app.post("/demo/screen/{invoice_key}")
 async def screen(invoice_key: str) -> dict:
     """Run an invoice past Model Armor. Nothing executes either way."""
