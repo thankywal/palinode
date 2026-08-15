@@ -120,9 +120,12 @@ shot() {
     -c:v libx264 -preset medium -crf 19 -an "$WORK/$4.mp4"
 }
 
-shot 0     "$DASH_WIDE" "scale=1920:1080"          "02a-dash-wide"
-shot 41.81 "$DASH_ROWS" "crop=1920:1080:940:170"   "02b-dash-rows"
-shot 61.38 "$DASH_DISC" "crop=1920:1080:1920:1080" "02c-dash-disclosure"
+# The recorder is running before the page is. The first half second of the
+# take is the white of about:blank, which lands as a white flash at the cut,
+# so the shot starts after the first paint. The tail has the slack for it.
+shot 0.70  "$DASH_WIDE" "scale=1920:1080"          "02a-dash-wide"
+shot 42.51 "$DASH_ROWS" "crop=1920:1080:940:170"   "02b-dash-rows"
+shot 62.08 "$DASH_DISC" "crop=1920:1080:1920:1080" "02c-dash-disclosure"
 
 norm "$OUT/outro.mp4"                  "10-outro"
 
