@@ -6,10 +6,11 @@
     "handoff": 233
   },
   "invoices": {
-    "durationInFrames": 940,
-    "verdictA": 241,
-    "verdictB": 641,
-    "punchline": 789
+    "durationInFrames": 1565,
+    "verdictA": 484,
+    "readB": 985,
+    "verdictB": 1291,
+    "punchline": 1351
   },
   "outro": {
     "durationInFrames": 414,

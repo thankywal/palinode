@@ -89,11 +89,15 @@ def main() -> None:
             "second": rel(hook, 1),
             "handoff": rel(hook, 2),
         },
+        # Six lines now, and each one has something on screen. Invoice A and
+        # its two verdicts, then invoice B and its two, then the line that
+        # says why the second one matters.
         "invoices": {
             "durationInFrames": frames(seg["03-fleet-acts"]["start"] - inv["start"]),
-            "verdictA": rel(inv, 1),
-            "verdictB": rel(inv, 3),
-            "punchline": rel(inv, 4),
+            "verdictA": rel(inv, 2),
+            "readB": rel(inv, 4),
+            "verdictB": rel(inv, 5),
+            "punchline": rel(inv, 5) + 60,
         },
         "outro": {
             "durationInFrames": frames(total - close["start"]),

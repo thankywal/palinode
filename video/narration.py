@@ -28,19 +28,24 @@ SEGMENTS = [
     },
     {
         "id": "02-two-invoices",
-        "visual": "model armor screening, one blocked one passed",
+        "visual": "the two documents, read and screened",
         "lines": [
-            "Here are two invoices. Both send four thousand two hundred "
-            "dollars to the same attacker's account. Only one of them is a "
-            "prompt injection.",
-            "Model Armor catches that one immediately, at high confidence.",
-            "The second has no injection in it at all. It is an ordinary "
-            "invoice with the bank details changed, which is what most real "
-            "invoice fraud actually is.",
-            "There is nothing in it for a prompt filter to filter, so Model "
-            "Armor passes it.",
-            "That is not a failure. It is a kind of attack that prevention "
-            "cannot reach.",
+            "Here are two invoices, as they actually arrive. Not as text. As "
+            "pages. Gemini 3.5 Flash reads both of them.",
+            "It reads the first one correctly, including the block near the "
+            "bottom addressed to whatever machine is processing it. That "
+            "block is a prompt injection.",
+            "On its own, Model Armor catches it at high confidence. Inside "
+            "the whole page, the same words come back as no match found.",
+            "Nothing about the attack changed. What changed is how much "
+            "ordinary invoice was printed around it. So we screen the "
+            "fragment separately, and the first invoice is blocked.",
+            "The second is read just as correctly. Four thousand two hundred "
+            "dollars. Remit to an account nobody has paid before. Banking "
+            "details changed. Every field is right there.",
+            "And it passes, because there is no injection in it to find. "
+            "That is not a failure of prevention. It is a kind of attack "
+            "prevention cannot reach.",
         ],
     },
     {

@@ -1,0 +1,15 @@
+import {chromium} from 'playwright';
+const BASE = 'https://palinode-173485225974.us-central1.run.app';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({viewport:{width:3840,height:2160}, deviceScaleFactor:1});
+const page = await ctx.newPage();
+await page.goto(`${BASE}/?pace=2`, {waitUntil:'domcontentloaded'});
+await page.waitForLoadState('load');
+await page.addStyleTag({content:'html { zoom: 2 }'});
+await new Promise(r=>setTimeout(r,900));
+await page.click('#screen');
+await page.waitForSelector('.inv', {timeout:60000});
+await new Promise(r=>setTimeout(r,3500));
+await page.screenshot({path:'/private/tmp/claude-501/-Users-nandar-claude-sandbox-workspace/6a516cbd-87c1-4e7b-aae0-864c6b6d9a57/scratchpad/armor-panel.png', clip:{x:0,y:0,width:3840,height:2160}});
+await browser.close();
+console.log('shot taken');
