@@ -7,6 +7,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import {Backdrop} from './Backdrop';
+import timing from './timing.json';
 import {font, mono, theme} from './theme';
 
 /**
@@ -58,7 +59,7 @@ export const Outro: React.FC = () => {
   const {fps, durationInFrames} = useVideoConfig();
 
   const head = spring({frame, fps, config: {damping: 200}});
-  const tail = spring({frame: frame - 130, fps, config: {damping: 200}});
+  const tail = spring({frame: frame - timing.outro.second, fps, config: {damping: 200}});
   const fadeOut = interpolate(
     frame,
     [durationInFrames - 14, durationInFrames],

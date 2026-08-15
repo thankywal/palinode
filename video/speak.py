@@ -1,12 +1,16 @@
-"""Turn the narration into audio, one file per segment.
+"""Turn the narration into audio, one file per line, and measure every one.
 
-Per segment rather than one long file, because the video is cut to the audio
-rather than the other way round. Each segment's footage holds for exactly as
-long as its line takes, so nothing needs nudging into sync afterwards.
+Per line rather than per segment, because the picture is cut at line
+boundaries. A segment that names four things in sentences of very different
+lengths cannot be sliced into four equal pieces, and that is exactly what an
+earlier cut did.
 
     python speak.py
 
-Writes audio/vo/<id>.wav and audio/vo/timing.json.
+Writes audio/vo/<segment>-<n>.wav and audio/vo/timing.json, where timing.json
+carries the measured length of every line and the absolute time each one
+starts in the finished film, gaps included. Everything downstream reads that
+file and nothing downstream guesses.
 """
 
 from __future__ import annotations
@@ -19,7 +23,7 @@ import sys
 import urllib.request
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from narration import SEGMENTS  # noqa: E402
+from narration import GAP_LINE, GAP_SEGMENT, SEGMENTS  # noqa: E402
 
 VOICE = "en-US-Studio-Q"
 RATE = 0.95
@@ -79,25 +83,57 @@ def duration(path: pathlib.Path) -> float:
 
 
 def main() -> None:
+    for stale in OUT.glob("*.wav"):
+        stale.unlink()
     OUT.mkdir(parents=True, exist_ok=True)
     bearer, proj = token(), project()
 
-    timing = []
-    total = 0.0
-    for segment in SEGMENTS:
-        path = OUT / f"{segment['id']}.wav"
-        path.write_bytes(synthesize(segment["text"], bearer, proj))
-        seconds = duration(path)
-        total += seconds
-        timing.append({
+    # Absolute time in the finished film. Advanced by each line and by each
+    # gap, so a line's start is where the picture for it has to change.
+    clock = 0.0
+    segments = []
+
+    for index, segment in enumerate(SEGMENTS):
+        lines = []
+        seg_start = clock
+
+        for n, text in enumerate(segment["lines"], start=1):
+            name = f"{segment['id']}-{n}.wav"
+            path = OUT / name
+            path.write_bytes(synthesize(text, bearer, proj))
+            seconds = duration(path)
+
+            lines.append({
+                "file": name,
+                "text": text,
+                "start": round(clock, 3),
+                "seconds": seconds,
+            })
+            clock += seconds
+            if n < len(segment["lines"]):
+                clock += GAP_LINE
+
+        segments.append({
             "id": segment["id"],
             "visual": segment["visual"],
-            "seconds": seconds,
+            "start": round(seg_start, 3),
+            "seconds": round(clock - seg_start, 3),
+            "lines": lines,
         })
-        print(f"  {segment['id']:<20} {seconds:>6.2f}s   {segment['visual']}")
+        print(f"  {segment['id']:<20} {clock - seg_start:>6.2f}s  "
+              f"{len(lines)} lines   {segment['visual']}")
 
+        if index < len(SEGMENTS) - 1:
+            clock += GAP_SEGMENT
+
+    timing = {
+        "gap_line": GAP_LINE,
+        "gap_segment": GAP_SEGMENT,
+        "total": round(clock, 3),
+        "segments": segments,
+    }
     (OUT / "timing.json").write_text(json.dumps(timing, indent=2))
-    print(f"\n  narration total {total:.1f}s  ({total / 60:.2f} minutes)")
+    print(f"\n  narration total {clock:.2f}s  ({clock / 60:.2f} minutes)")
 
 
 if __name__ == "__main__":

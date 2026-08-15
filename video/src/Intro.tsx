@@ -8,12 +8,18 @@ import {
 } from 'remotion';
 import {Backdrop} from './Backdrop';
 import {font, theme} from './theme';
+import timing from './timing.json';
 
 /**
- * The opening eight seconds.
+ * The opening card.
  *
  * Judges watch a lot of these back to back. The point of this card is that the
  * name explains itself before anyone has to be told what the product does.
+ *
+ * The beats are read from timing.json rather than chosen. The quote used to
+ * hand off to the wordmark at frame 128 because eight seconds felt right, and
+ * the voice was still saying to take back what an earlier poem said while the
+ * words it was reading had already gone.
  */
 
 const Line: React.FC<{
@@ -52,12 +58,13 @@ export const Intro: React.FC = () => {
   const {fps, durationInFrames} = useVideoConfig();
 
   // The quote fades out as the wordmark takes over.
-  const handoff = interpolate(frame, [128, 150], [1, 0], {
+  const {second, handoff: hand} = timing.intro;
+  const handoff = interpolate(frame, [hand - 10, hand + 8], [1, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
 
-  const markIn = spring({frame: frame - 140, fps, config: {damping: 200}});
+  const markIn = spring({frame: frame - hand, fps, config: {damping: 200}});
   const markScale = interpolate(markIn, [0, 1], [0.94, 1]);
   const ruleWidth = interpolate(markIn, [0, 1], [0, 150]);
 
@@ -87,17 +94,19 @@ export const Intro: React.FC = () => {
             is a poem written for one purpose only:
           </Line>
           <div style={{height: 34}} />
-          <Line at={52} size={62} weight={800}>
+          <Line at={second} size={62} weight={800}>
             to take back what an
           </Line>
-          <Line at={64} size={62} weight={800}>
+          <Line at={second + 12} size={62} weight={800}>
             earlier poem said.
           </Line>
-          <div style={{height: 44}} />
-          <Line at={92} size={44} colour={theme.sky} weight={600}>
-            This is a palinode for AI agents.
-          </Line>
         </div>
+
+        {/*
+          The third line of the quote, this is a palinode for AI agents, is not
+          written here. It is the moment the wordmark arrives, and the mark
+          says it better than the sentence does.
+        */}
 
         <div
           style={{

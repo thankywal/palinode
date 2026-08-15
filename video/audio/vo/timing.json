@@ -1,47 +1,241 @@
-[
-  {
-    "id": "01-hook",
-    "visual": "intro card",
-    "seconds": 9.85
-  },
-  {
-    "id": "02-two-invoices",
-    "visual": "model armor screening, one blocked one passed",
-    "seconds": 29.95
-  },
-  {
-    "id": "03-fleet-acts",
-    "visual": "five actions landing on the dashboard",
-    "seconds": 17.475
-  },
-  {
-    "id": "04-sentinel",
-    "visual": "sentinel panel appears, reversal begins",
-    "seconds": 23.225
-  },
-  {
-    "id": "05-what-came-back",
-    "visual": "rows turning green and amber",
-    "seconds": 19.025
-  },
-  {
-    "id": "06-what-did-not",
-    "visual": "wire stays red, disclosure panel",
-    "seconds": 12.15
-  },
-  {
-    "id": "07-it-was-real",
-    "visual": "stripe, github, slack dashboards",
-    "seconds": 14.675
-  },
-  {
-    "id": "08-google-cloud",
-    "visual": "cloud run, logs, trace, firestore",
-    "seconds": 20.25
-  },
-  {
-    "id": "09-close",
-    "visual": "outro numbers",
-    "seconds": 13.675
-  }
-]
+{
+  "gap_line": 0.3,
+  "gap_segment": 0.55,
+  "total": 169.15,
+  "segments": [
+    {
+      "id": "01-hook",
+      "visual": "intro card",
+      "start": 0.0,
+      "seconds": 10.375,
+      "lines": [
+        {
+          "file": "01-hook-1.wav",
+          "text": "In classical poetry, a palinode is a poem written for one purpose only.",
+          "start": 0.0,
+          "seconds": 4.9
+        },
+        {
+          "file": "01-hook-2.wav",
+          "text": "To take back what an earlier poem said.",
+          "start": 5.2,
+          "seconds": 2.275
+        },
+        {
+          "file": "01-hook-3.wav",
+          "text": "This is a palinode for A I agents.",
+          "start": 7.775,
+          "seconds": 2.6
+        }
+      ]
+    },
+    {
+      "id": "02-two-invoices",
+      "visual": "model armor screening, one blocked one passed",
+      "start": 10.925,
+      "seconds": 30.775,
+      "lines": [
+        {
+          "file": "02-two-invoices-1.wav",
+          "text": "Here are two invoices. Both send four thousand two hundred dollars to the same attacker's account. Only one of them is a prompt injection.",
+          "start": 10.925,
+          "seconds": 7.725
+        },
+        {
+          "file": "02-two-invoices-2.wav",
+          "text": "Model Armor catches that one immediately, at high confidence.",
+          "start": 18.95,
+          "seconds": 3.8
+        },
+        {
+          "file": "02-two-invoices-3.wav",
+          "text": "The second has no injection in it at all. It is an ordinary invoice with the bank details changed, which is what most real invoice fraud actually is.",
+          "start": 23.05,
+          "seconds": 8.95
+        },
+        {
+          "file": "02-two-invoices-4.wav",
+          "text": "There is nothing in it for a prompt filter to filter, so Model Armor passes it.",
+          "start": 32.3,
+          "seconds": 4.625
+        },
+        {
+          "file": "02-two-invoices-5.wav",
+          "text": "That is not a failure. It is a kind of attack that prevention cannot reach.",
+          "start": 37.225,
+          "seconds": 4.475
+        }
+      ]
+    },
+    {
+      "id": "03-fleet-acts",
+      "visual": "the dashboard, wide",
+      "start": 42.25,
+      "seconds": 17.7,
+      "lines": [
+        {
+          "file": "03-fleet-acts-1.wav",
+          "text": "So it reaches the fleet, and three agents do their job correctly. A database write. A Slack post. An email. A card charge. And a wire transfer.",
+          "start": 42.25,
+          "seconds": 8.05
+        },
+        {
+          "file": "03-fleet-acts-2.wav",
+          "text": "Watch the wire. It is already red before anything has gone wrong, because Palinode decides how reversible an action is before the action runs, not after.",
+          "start": 50.6,
+          "seconds": 9.35
+        }
+      ]
+    },
+    {
+      "id": "04-sentinel",
+      "visual": "the dashboard, wide",
+      "start": 60.5,
+      "seconds": 23.625,
+      "lines": [
+        {
+          "file": "04-sentinel-1.wav",
+          "text": "Now watch what does not happen. Nobody presses a button.",
+          "start": 60.5,
+          "seconds": 3.225
+        },
+        {
+          "file": "04-sentinel-2.wav",
+          "text": "Sentinel reads the ledger. A beneficiary this fleet has never paid before. An irreversible action sitting at the end of an otherwise ordinary chain. And a Gemini review of the shape of the whole run.",
+          "start": 64.025,
+          "seconds": 12.625
+        },
+        {
+          "file": "04-sentinel-3.wav",
+          "text": "Any two of those clears the threshold. One oddity is a Tuesday. Two is an incident. So it calls the reversal itself.",
+          "start": 76.95,
+          "seconds": 7.175
+        }
+      ]
+    },
+    {
+      "id": "05-what-came-back",
+      "visual": "in on the ledger rows",
+      "start": 84.675,
+      "seconds": 19.575,
+      "lines": [
+        {
+          "file": "05-what-came-back-1.wav",
+          "text": "Four actions come back. The database write is reversed cleanly.",
+          "start": 84.675,
+          "seconds": 3.55
+        },
+        {
+          "file": "05-what-came-back-2.wav",
+          "text": "The Slack post is deleted and corrected, because people already read it. The email gets a retraction, because S M T P has no recall.",
+          "start": 88.525,
+          "seconds": 8.275
+        },
+        {
+          "file": "05-what-came-back-3.wav",
+          "text": "The charge is refunded, and then verified against Stripe, because an API returning two hundred does not mean the money moved.",
+          "start": 97.1,
+          "seconds": 7.15
+        }
+      ]
+    },
+    {
+      "id": "06-what-did-not",
+      "visual": "in on the disclosure",
+      "start": 104.8,
+      "seconds": 12.4,
+      "lines": [
+        {
+          "file": "06-what-did-not-1.wav",
+          "text": "One does not come back. A settled wire does not return on request.",
+          "start": 104.8,
+          "seconds": 3.825
+        },
+        {
+          "file": "06-what-did-not-2.wav",
+          "text": "Palinode does not pretend otherwise. It writes the disclosure, names who was affected, and reports the exposure. Four thousand two hundred dollars.",
+          "start": 108.925,
+          "seconds": 8.275
+        }
+      ]
+    },
+    {
+      "id": "07-it-was-real",
+      "visual": "stripe, github, slack",
+      "start": 117.75,
+      "seconds": 15.3,
+      "lines": [
+        {
+          "file": "07-it-was-real-1.wav",
+          "text": "None of that was simulated. Here is the Stripe dashboard, with the charge and the refund.",
+          "start": 117.75,
+          "seconds": 4.575
+        },
+        {
+          "file": "07-it-was-real-2.wav",
+          "text": "Here is the GitHub repository, where every approve commit is followed by a revert.",
+          "start": 122.625,
+          "seconds": 5.325
+        },
+        {
+          "file": "07-it-was-real-3.wav",
+          "text": "And here is the Slack channel, with the message gone and the correction standing in its place.",
+          "start": 128.25,
+          "seconds": 4.8
+        }
+      ]
+    },
+    {
+      "id": "08-google-cloud",
+      "visual": "cloud run, logs, trace, firestore",
+      "start": 133.6,
+      "seconds": 21.2,
+      "lines": [
+        {
+          "file": "08-google-cloud-1.wav",
+          "text": "Here is where it runs. Cloud Run, scaling to zero.",
+          "start": 133.6,
+          "seconds": 2.9
+        },
+        {
+          "file": "08-google-cloud-2.wav",
+          "text": "The logs, showing real calls out to Stripe, GitHub and Slack.",
+          "start": 136.8,
+          "seconds": 3.075
+        },
+        {
+          "file": "08-google-cloud-3.wav",
+          "text": "Cloud Trace, carrying our own OpenTelemetry spans.",
+          "start": 140.175,
+          "seconds": 3.375
+        },
+        {
+          "file": "08-google-cloud-4.wav",
+          "text": "And Firestore, holding a causality graph where every entry names a SPIFFE actor and commits to the one before it, so no action can be edited after the fact.",
+          "start": 143.85,
+          "seconds": 10.95
+        }
+      ]
+    },
+    {
+      "id": "09-close",
+      "visual": "outro numbers",
+      "start": 155.35,
+      "seconds": 13.8,
+      "lines": [
+        {
+          "file": "09-close-1.wav",
+          "text": "Connecting those real systems broke three things a simulator had been quietly agreeing with for days. That is rather the point.",
+          "start": 155.35,
+          "seconds": 7.15
+        },
+        {
+          "file": "09-close-2.wav",
+          "text": "Palinode is not the agent that does the work. It is the one that has to be right about what cannot be taken back.",
+          "start": 162.8,
+          "seconds": 6.35
+        }
+      ]
+    }
+  ]
+}

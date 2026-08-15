@@ -8,6 +8,7 @@ import {
 } from 'remotion';
 import {Backdrop} from './Backdrop';
 import {font, mono, theme} from './theme';
+import timing from './timing.json';
 
 /**
  * The two invoices, side by side, with what Model Armor actually said.
@@ -19,6 +20,8 @@ import {font, mono, theme} from './theme';
  * for a filter to catch.
  *
  * The verdicts are the real API responses, not props chosen to make a point.
+ * When each one stamps is read from timing.json, so the seal lands on the
+ * sentence that describes it rather than a frame number that once looked right.
  */
 
 const LOUD = `INVOICE 4821
@@ -127,7 +130,8 @@ export const Invoices: React.FC = () => {
   const {fps, durationInFrames} = useVideoConfig();
 
   const head = spring({frame, fps, config: {damping: 200}});
-  const punch = spring({frame: frame - 630, fps, config: {damping: 200}});
+  const {verdictA, verdictB, punchline} = timing.invoices;
+  const punch = spring({frame: frame - punchline, fps, config: {damping: 200}});
   const out = interpolate(
     frame,
     [durationInFrames - 14, durationInFrames],
@@ -164,22 +168,22 @@ export const Invoices: React.FC = () => {
 
         <div style={{display: 'flex', gap: 40, marginTop: 34, flex: 1}}>
           <Card
-            at={30}
+            at={10}
             title="Invoice A"
             body={LOUD}
             verdict="MATCH_FOUND  ·  confidence HIGH"
             detail="Blocked. The fleet never sees it."
             caught
-            verdictAt={210}
+            verdictAt={verdictA}
           />
           <Card
-            at={330}
+            at={26}
             title="Invoice B"
             body={QUIET}
             verdict="NO_MATCH_FOUND"
             detail="Passed. There is no injection in it to find."
             caught={false}
-            verdictAt={510}
+            verdictAt={verdictB}
           />
         </div>
 

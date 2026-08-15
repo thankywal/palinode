@@ -5,9 +5,14 @@ import {Invoices} from './Invoices';
 import {Intro} from './Intro';
 import {Outro} from './Outro';
 import {FPS, theme} from './theme';
+import timing from './timing.json';
 
 /**
  * Title cards only.
+ *
+ * Every duration here is read from timing.json, which plan.py derives from the
+ * measured length of the narration. A card that runs a second longer than the
+ * line over it is a card the voice is fighting.
  *
  * The demo itself is a screen recording of the real dashboard driving the real
  * control plane, because the rules ask for a live unedited demonstration and
@@ -19,7 +24,7 @@ export const RemotionRoot: React.FC = () => (
     <Composition
       id="Intro"
       component={Intro}
-      durationInFrames={312}
+      durationInFrames={timing.intro.durationInFrames}
       fps={FPS}
       width={1920}
       height={1080}
@@ -45,7 +50,7 @@ export const RemotionRoot: React.FC = () => (
     <Composition
       id="Invoices"
       component={Invoices}
-      durationInFrames={915}
+      durationInFrames={timing.invoices.durationInFrames}
       fps={FPS}
       width={1920}
       height={1080}
@@ -54,7 +59,7 @@ export const RemotionRoot: React.FC = () => (
     <Composition
       id="Outro"
       component={Outro}
-      durationInFrames={427}
+      durationInFrames={timing.outro.durationInFrames}
       fps={FPS}
       width={1920}
       height={1080}

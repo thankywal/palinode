@@ -1,0 +1,18 @@
+{
+  "fps": 30,
+  "intro": {
+    "durationInFrames": 328,
+    "second": 156,
+    "handoff": 233
+  },
+  "invoices": {
+    "durationInFrames": 940,
+    "verdictA": 241,
+    "verdictB": 641,
+    "punchline": 789
+  },
+  "outro": {
+    "durationInFrames": 414,
+    "second": 224
+  }
+}
