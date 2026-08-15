@@ -192,6 +192,24 @@ python demo.py
 You should see three agents perform five actions, one of which should never
 have happened, and then the whole thing come back apart.
 
+The money moves in two directions in this scenario, and it is worth being
+clear about which is which, because both have to come back.
+
+| | |
+|---|---|
+| Northwind Traders sends us | a supplier invoice for 1,180, with the bank details forged |
+| we send acct-unknown-77 | 4,200 by wire, to those forged details |
+| Apex Logistics sends us | 1,180 by card, the supplier cost passed through to the client it belongs to |
+
+The Stripe charge is that last one. Apex is a client, not the supplier, and a
+charge takes money in, so billing Northwind here would have had us collecting
+from the people we owe.
+
+That charge is entirely correct in itself. The fleet did the right thing with
+it. It gets refunded anyway, because the vendor approval underneath it was made
+on a forgery, and you do not get to keep the parts of a run that happen to be
+reversible.
+
 ```
 the fleet does its job
 

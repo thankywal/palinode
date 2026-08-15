@@ -282,7 +282,10 @@ def _sentinel() -> Sentinel:
     sentinel = Sentinel(regret=regret, herald=get_herald())
     # Counterparties this fleet has dealt with before. In a real deployment
     # this is the vendor master, not a literal.
-    sentinel.known_counterparties = {"cus_northwind", "ap@northwind.example"}
+    sentinel.known_counterparties = {
+        "cus_apex_logistics",
+        "ap@northwind.example",
+    }
     return sentinel
 
 

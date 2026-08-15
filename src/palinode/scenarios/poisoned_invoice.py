@@ -1,8 +1,23 @@
 """The scenario both the terminal walkthrough and the dashboard run.
 
-A procurement fleet processes an invoice. The invoice is poisoned, so the last
-action pays an attacker instead of the vendor. Five actions land, four of them
-come back, one does not.
+A procurement fleet processes a supplier invoice. The invoice is poisoned, so
+the last action pays an attacker instead of the supplier. Five actions land,
+four of them come back, one does not.
+
+The money moves in two directions and it is worth being clear about which is
+which, because the whole point of the reversal is that both have to be undone.
+
+    Northwind Traders  ->  us      a supplier invoice for 1,180
+    us  ->  Northwind Traders      what we owe them, and never sent
+    us  ->  acct-unknown-77        4,200 by wire, to the forged details
+    Apex Logistics  ->  us         1,180 by card, the cost passed through
+
+The Stripe charge is the last of those. Apex is the client the supplier cost
+belongs to, and the fleet billed them for it the moment the invoice was
+approved, which is what a pass through cost does. That charge is entirely
+correct in itself. It gets refunded anyway, because the approval underneath it
+was made on a forgery, and you do not get to keep the parts of a run that
+happen to be reversible.
 
 Kept in one place so the demo and the control plane cannot drift apart, which
 they would, and always at the worst possible moment.
@@ -40,7 +55,7 @@ def setup_fleet() -> None:
         AgentCard(
             name="payables",
             owner="finance",
-            description="settles approved invoices",
+            description="settles supplier invoices and rebills the client",
             tools={"stripe_charge", "wire_transfer", "email_send"},
             budget_usd_per_hour=5000,
         ),
@@ -144,13 +159,18 @@ async def run() -> str:
     # word "poisoned" in the idempotency key, and Sentinel's model review
     # promptly cited that as evidence. Handing the detector the answer in the
     # data it is meant to judge is not detection.
-    charge_key = "ch_inv4821_northwind"
+    charge_key = "ch_inv4821_rebill"
     charge = await _act(
         "payables",
         "stripe_charge",
         {
-            "customer": "cus_northwind",
+            # Apex is the client, not the supplier. A charge takes money in, so
+            # billing Northwind here would have had us collecting from the
+            # people we owe. This is the supplier cost passed through to the
+            # client whose project it belongs to.
+            "customer": "cus_apex_logistics",
             "amount_usd": 1180.00,
+            "memo": "invoice 4821, passed through",
             "idempotency_key": charge_key,
         },
         CompensationContract(
@@ -168,7 +188,10 @@ async def run() -> str:
         CompensationContract(
             tool="",
             disclosure_required=True,
-            affected_parties=["ap@northwind.example"],
+            affected_parties=[
+                "ap@northwind.example",
+                "billing@apexlogistics.example",
+            ],
             estimated_exposure_usd=4200.00,
         ),
         charge,

@@ -38,7 +38,7 @@ const SLIDES = [
     group: 'IT WAS REAL',
     index: '01',
     title: 'Stripe',
-    caption: 'Eleven live charges. Nine refunded by Palinode, two left standing.',
+    caption: 'Nineteen live charges across the demo runs. Seventeen refunded by Palinode, with nobody asked.',
     accent: SKY,
   },
   {
