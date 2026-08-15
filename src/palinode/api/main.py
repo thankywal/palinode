@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -21,8 +21,10 @@ from .limits import throttle
 from ..agents.herald import get_herald
 from ..agents.regret import RegretAgent
 from ..agents.sentinel import Sentinel
+from ..agents.sweeper import Sweeper
 from ..agents.verifier import Verifier
 from ..connectors.base import run_tool
+from ..intel import get_intel
 from ..ledger.store import get_ledger
 from ..config import settings
 from ..scenarios import cold_case, poisoned_invoice
@@ -34,6 +36,7 @@ from ..warden.registry import get_registry
 # refund ids, which are the operational record of what the reversal actually
 # did, and the first thing anyone would look for in the logs.
 logging.getLogger("palinode").setLevel(logging.INFO)
+log = logging.getLogger("palinode.api")
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
 
@@ -207,15 +210,24 @@ async def screen(invoice_key: str) -> dict:
 
 
 @app.post("/demo/cold-case")
-async def seed_cold_case() -> dict:
+async def seed_cold_case(reverse: bool = True) -> dict:
     """Seed a run dated three weeks back, then reverse it.
 
     The Fleet track asks for context held across weeks of asynchronous
     operation. This is that, end to end: contracts written twenty three days
     ago, executed today, with nothing in the reversal path aware of the gap.
     """
+    # Clear what we were told last time, so the story starts where it should:
+    # a run that nobody had any reason to look at.
+    await get_intel().clear("cus_meridian")
     await cold_case.reset()
     seeded = await cold_case.run()
+
+    # reverse=false leaves the run standing, which is what the sweep needs:
+    # something that happened weeks ago, that nobody undid, because at the time
+    # there was nothing wrong with it.
+    if not reverse:
+        return {**seeded, "reversal": None}
 
     regret = RegretAgent(run_tool=run_tool)
     plan = await regret.plan(run_id=cold_case.RUN_ID)
@@ -317,3 +329,88 @@ async def sentinel_watch(run_id: str) -> dict:
     if outcome.get("triggered"):
         await get_ledger().save_outcome(run_id, outcome)
     return outcome
+
+
+# ---------------------------------------------------------------- the sweep
+
+
+def _caller(request: Request) -> str:
+    """Who is invoking the sweep, if we can tell.
+
+    The service is public, because the demo has to be reachable without a
+    credential. The sweep is not a demo endpoint: it reverses real actions
+    across real systems with nobody watching, so it will not run for an
+    anonymous caller.
+
+    Cloud Scheduler is configured to attach an OIDC token. This verifies it
+    against Google's keys and returns the service account that signed it.
+    Anything else is refused, including a request that merely claims in a
+    header to be Cloud Scheduler, which anyone can send.
+    """
+    header = request.headers.get("authorization", "")
+    if not header.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="the sweep runs for Cloud Scheduler, not for the internet",
+        )
+
+    token = header.split(" ", 1)[1].strip()
+    try:
+        from google.auth.transport import requests as google_requests
+        from google.oauth2 import id_token
+
+        claims = id_token.verify_oauth2_token(token, google_requests.Request())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("sweep rejected a token: %s", exc)
+        raise HTTPException(status_code=401, detail="that token did not verify")
+
+    email = claims.get("email", "")
+    if not email.endswith(".gserviceaccount.com"):
+        raise HTTPException(status_code=403, detail="not a service account")
+    return email
+
+
+@app.post("/sweep")
+async def sweep(request: Request, days: int = 45, act: bool = True) -> dict:
+    """Reassess runs nobody ever took back, against what we know now.
+
+    Invoked by Cloud Scheduler. There is no request in flight when this
+    matters and nobody is waiting for the answer, which is the point: the
+    fraud this catches was discovered weeks after the run it invalidates.
+    """
+    caller = _caller(request)
+    log.info("sweep requested by %s, window %d days, acting=%s", caller, days, act)
+
+    sweeper = Sweeper(
+        sentinel=_sentinel(),
+        ledger=get_ledger(),
+        verifier=Verifier(run_tool=run_tool),
+    )
+    result = await sweeper.sweep(days=days, act=act)
+
+    for outcome in result["reversed"]:
+        run_id = outcome.get("run_id")
+        if run_id:
+            await get_ledger().save_outcome(run_id, outcome)
+
+    return {**result, "invoked_by": caller}
+
+
+@app.get("/intel")
+async def intel_list() -> dict:
+    """What we have been told since, and when."""
+    return {"flagged": await get_intel().all()}
+
+
+@app.post("/demo/intel/{party}")
+async def intel_flag(party: str) -> dict:
+    """Mark a counterparty bad, the way a deny list hit would.
+
+    A demo endpoint. In a real deployment this is a webhook from a bank, a
+    sanctions feed, or a person in the fraud team, and it is the only new
+    information in the whole cold case story.
+    """
+    entry = await get_intel().flag(
+        party, source="fraud desk", note="reported by the acquiring bank"
+    )
+    return entry

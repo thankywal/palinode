@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from typing import Iterable, Optional
 
@@ -23,6 +24,7 @@ log = logging.getLogger("palinode.ledger")
 
 COLLECTION = "palinode_actions"
 OUTCOMES = "palinode_outcomes"
+CLAIMS = "palinode_claims"
 
 
 class LedgerStore:
@@ -36,6 +38,7 @@ class LedgerStore:
         self._mem: dict[str, ActionRecord] = {}
         self._outcomes: dict[str, dict] = {}
         self._tips: dict[str, str] = {}
+        self._claims: dict[str, tuple] = {}
         self._lock = asyncio.Lock()
         self._client = None
 
@@ -159,6 +162,106 @@ class LedgerStore:
         async with self._lock:
             records = [r for r in self._mem.values() if r.run_id == run_id]
         return sorted(records, key=lambda r: r.created_at)
+
+    async def open_runs(self, since) -> list[str]:
+        """Runs that were never taken back, newest first.
+
+        A run is open if anything in it is still executed or unrecoverable,
+        which is to say nobody, and nothing, has undone it. These are what the
+        Sweeper reassesses against whatever has been learned since.
+
+        Filtered on state in the query and on date in Python. The pair would
+        need a composite index in Firestore, and asking an operator to create
+        one before the scheduled job will run is a good way to have a scheduled
+        job that silently never runs.
+        """
+        alive = (ActionState.EXECUTED.value, ActionState.UNRECOVERABLE.value)
+
+        if self._client is not None:
+            try:
+                from google.cloud.firestore_v1.base_query import FieldFilter
+
+                query = self._client.collection(COLLECTION).where(
+                    filter=FieldFilter("state", "in", list(alive))
+                )
+                records = [
+                    ActionRecord.model_validate(d.to_dict()) async for d in query.stream()
+                ]
+                async with self._lock:
+                    for r in records:
+                        self._mem.setdefault(r.id, r)
+            except Exception as exc:  # noqa: BLE001
+                self._demote("open_runs", exc)
+
+        async with self._lock:
+            latest: dict[str, object] = {}
+            for r in self._mem.values():
+                if r.state.value not in alive or r.created_at < since:
+                    continue
+                if r.run_id not in latest or r.created_at > latest[r.run_id]:
+                    latest[r.run_id] = r.created_at
+
+        return [run for run, _ in sorted(latest.items(), key=lambda kv: kv[1], reverse=True)]
+
+    async def claim(self, run_id: str, holder: str, *, ttl_seconds: int = 600) -> bool:
+        """Take exclusive charge of reversing a run. False if someone else has it.
+
+        Cloud Scheduler delivers at least once and Cloud Run answers from more
+        than one container, so two sweeps can look at the same open run in the
+        same second. Both of them found the same three week old fraud, both
+        called Regret, and GitHub refused the second revert with 422 because
+        the ref had moved underneath it. Stripe would not have refused. It
+        would have refunded twice.
+
+        A create that fails when the document already exists is the whole lock.
+        Claims go stale so a container that dies mid reversal does not hold a
+        run hostage forever.
+        """
+        now = datetime.now(timezone.utc)
+        fresh = now - timedelta(seconds=ttl_seconds)
+
+        if self._client is not None:
+            doc = self._client.collection(CLAIMS).document(run_id)
+            try:
+                await doc.create({"holder": holder, "claimed_at": now.isoformat()})
+                return True
+            except Exception as exc:  # noqa: BLE001
+                # AlreadyExists is the normal, expected answer here. Anything
+                # else means Firestore is unwell, and the safe reading of an
+                # unavailable lock is that we do not hold it.
+                if "already exists" not in str(exc).lower():
+                    log.error("claim on %s failed: %s", run_id, exc)
+                    return False
+                try:
+                    snap = await doc.get()
+                    held = snap.to_dict() or {}
+                    when = datetime.fromisoformat(held.get("claimed_at", now.isoformat()))
+                    if when > fresh:
+                        log.info("run %s already claimed by %s", run_id, held.get("holder"))
+                        return False
+                    await doc.set({"holder": holder, "claimed_at": now.isoformat()})
+                    log.warning("took over a stale claim on %s", run_id)
+                    return True
+                except Exception as inner:  # noqa: BLE001
+                    log.error("stale claim check on %s failed: %s", run_id, inner)
+                    return False
+
+        async with self._lock:
+            held = self._claims.get(run_id)
+            if held is not None and held[1] > fresh:
+                return False
+            self._claims[run_id] = (holder, now)
+            return True
+
+    async def release(self, run_id: str) -> None:
+        """Give the claim back. Best effort: the ttl covers the rest."""
+        async with self._lock:
+            self._claims.pop(run_id, None)
+        if self._client is not None:
+            try:
+                await self._client.collection(CLAIMS).document(run_id).delete()
+            except Exception as exc:  # noqa: BLE001
+                log.warning("release of %s failed, ttl will clear it: %s", run_id, exc)
 
     async def spend_since(self, agent: str, cutoff) -> float:
         """Unrecoverable exposure an agent has run up since a point in time."""

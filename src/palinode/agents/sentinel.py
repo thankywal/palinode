@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from ..config import settings
+from ..intel import get_intel
 from ..ledger.store import get_ledger
 from ..telemetry import annotate, span
 from ..types import ActionRecord, ActionState, Tier
@@ -58,6 +59,12 @@ class Assessment:
 # threshold, which is the behaviour we want: one oddity is a Tuesday, two is an
 # incident. Tuning this finer without production data would be pretending to a
 # precision we do not have.
+# A counterparty on the intel store is not a heuristic about the shape of a
+# run. It is a fact that arrived after the run finished, so it carries more
+# weight than the whole rest of this file put together and clears the threshold
+# on its own. Two guesses make an incident. One fact already is one.
+FLAGGED_BENEFICIARY = 1.2
+
 UNKNOWN_BENEFICIARY = 0.6
 LARGE_FOR_AGENT = 0.5
 IRREVERSIBLE_TAIL = 0.5
@@ -91,6 +98,7 @@ class Sentinel:
         # Counterparties this fleet has legitimately dealt with before. In a
         # real deployment this comes from the vendor master, not memory.
         self.known_counterparties: set[str] = set()
+        self.intel = get_intel()
 
     # ------------------------------------------------------------- signals
 
@@ -108,9 +116,43 @@ class Sentinel:
                 return float(value)
         return 0.0
 
-    async def _static_signals(self, actions: list[ActionRecord]) -> tuple[list[Signal], Optional[str]]:
+    async def _flagged_signals(
+        self, actions: list[ActionRecord]
+    ) -> tuple[list[Signal], Optional[str]]:
+        """Counterparties we have since been told are bad.
+
+        Deliberately not scoped to irreversible actions, which is what every
+        other signal here does. The run this catches is the one where nothing
+        was irreversible and nothing looked wrong: an ordinary renewal paid to
+        an ordinary vendor, three weeks before anyone found out the vendor was
+        not one. There is no shape to spot in that. There is only a fact that
+        turned up later.
+        """
         signals: list[Signal] = []
         trigger: Optional[str] = None
+        seen: set[str] = set()
+
+        for record in actions:
+            party = self._beneficiary(record)
+            if not party or party in seen:
+                continue
+            entry = await self.intel.get(party)
+            if entry is None:
+                continue
+            seen.add(party)
+            trigger = trigger or record.id
+            signals.append(
+                Signal(
+                    "flagged_beneficiary",
+                    FLAGGED_BENEFICIARY,
+                    f"{party} was flagged by {entry['source']} after this ran",
+                )
+            )
+
+        return signals, trigger
+
+    async def _static_signals(self, actions: list[ActionRecord]) -> tuple[list[Signal], Optional[str]]:
+        signals, trigger = await self._flagged_signals(actions)
 
         amounts = [self._amount(a) for a in actions if self._amount(a) > 0]
         typical = (sum(amounts) / len(amounts)) if amounts else 0.0

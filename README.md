@@ -103,13 +103,46 @@ It then calls Regret itself. No approval, no ticket. A person finds out by
 reading what already happened. The undo button stays as a manual override for
 when someone gets there first, which is not the path this is built around.
 
-### 6. Recovery runs without a human
+### 6. The Sweeper decides again, weeks later
+
+Sentinel reads the shape of a run while it is happening, and in the moment the
+only alarming shape is an irreversible action where there should not be one.
+That catches the poisoned invoice in about twenty seconds.
+
+The other case is slower and far more common. Every action was ordinary.
+Nothing was irreversible. Nobody was alarmed, correctly, because at the time
+there was nothing to be alarmed about. Then three weeks later the vendor turns
+out to be fraudulent.
+
+Nothing about that run changed. What changed is what we know.
+
+So a Cloud Scheduler job wakes the Sweeper every hour, with no request in
+flight and nobody waiting for an answer. It walks the runs nobody ever took
+back, scores each one again against the intel store, and reverses whatever no
+longer holds up. A counterparty appearing on that store is worth 1.2 on its
+own, more than any two heuristics combined, because it is not a guess about
+shape. It is a fact that arrived late.
+
+```
+POST /demo/cold-case?reverse=false     a run from 23 days ago, left standing
+GET  /sentinel/run_cold_case           score 0.00, nothing unusual
+POST /demo/intel/cus_meridian          the acquiring bank reports the vendor
+                                       (Cloud Scheduler fires on the hour)
+GET  /runs/run_cold_case               reversed, found_by: sweeper
+```
+
+The `/sweep` endpoint refuses anonymous callers. Cloud Scheduler attaches an
+OIDC token and the service verifies it against Google's keys, because the
+service is public so the demo is reachable, and this endpoint reverses real
+actions across real systems with nobody watching.
+
+### 7. Recovery runs without a human
 
 The Regret agent plans a reversal in reverse dependency order, runs it, and
 verifies each step actually landed. A refund API returning 200 is treated as a
 claim, not a fact.
 
-### 7. Contracts outlive the session that wrote them
+### 8. Contracts outlive the session that wrote them
 
 The poisoned invoice demo runs in a minute, which makes it easy to assume the
 ledger is a short lived thing holding one request together.
@@ -128,12 +161,12 @@ This is the case that actually happens: a vendor turns out to be fraudulent
 weeks after the invoices cleared, and somebody has to unwind everything done on
 their behalf without a list of what that was.
 
-### 8. What cannot be undone is disclosed, not hidden
+### 9. What cannot be undone is disclosed, not hidden
 
 Herald handles T3. It writes the disclosure, names who was affected, and puts a
 number on the damage.
 
-### 9. Every action names a principal, and the trail proves it was not edited
+### 10. Every action names a principal, and the trail proves it was not edited
 
 Each agent carries a SPIFFE shaped identity:
 
@@ -164,7 +197,7 @@ recorded, which is exactly the mutation an append only ledger exists to
 prevent. The fix was for the agent to name the charge before making it, the way
 idempotency keys work, so the contract can point at it up front.
 
-### 10. Agents have a blast radius budget, not just permissions
+### 11. Agents have a blast radius budget, not just permissions
 
 An agent may accumulate at most a set amount of unrecoverable exposure per
 hour. When the budget runs out the Warden drops it to propose only mode, with
@@ -290,7 +323,10 @@ uvicorn palinode.api.main:app --app-dir src --reload
 | `POST /sentinel/{run_id}/watch` | hand the run to Sentinel, which reverses if it decides to |
 | `POST /undo` | operator override, `dry_run` to preview the plan |
 | `POST /demo/screen/{loud\|quiet}` | run an invoice past Model Armor |
-| `POST /demo/cold-case` | seed a run dated three weeks back and reverse it |
+| `POST /sweep` | reassess runs nobody took back. Cloud Scheduler only, OIDC verified |
+| `GET /intel` | counterparties we have since been told are bad |
+| `POST /demo/intel/{party}` | flag one, the way a deny list hit would |
+| `POST /demo/cold-case` | seed a run dated three weeks back. `?reverse=false` leaves it open |
 | `POST /demo/seed` | replay the scenario |
 | `POST /demo/reset` | clear the run |
 
@@ -312,6 +348,41 @@ gcloud run deploy palinode \
 GOOGLE_GENAI_USE_VERTEXAI=TRUE,\
 PALINODE_MODEL_ARMOR_TEMPLATE=palinode-guard
 ```
+
+### The scheduled sweep
+
+The Sweeper is the only part of this that runs with no request in flight, so it
+needs something to wake it and a way to prove who is calling.
+
+```bash
+gcloud services enable cloudscheduler.googleapis.com
+
+gcloud iam service-accounts create palinode-sweeper \
+  --display-name="Palinode scheduled sweep"
+
+# Cloud Scheduler mints the OIDC token as that account, which it cannot do
+# without this. Skip it and the job sits at status code -1 forever, having
+# never made a request, which looks exactly like a job that is not scheduled.
+gcloud iam service-accounts add-iam-policy-binding \
+  palinode-sweeper@$PROJECT.iam.gserviceaccount.com \
+  --member="serviceAccount:service-$PROJECT_NUMBER@gcp-sa-cloudscheduler.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator"
+
+gcloud scheduler jobs create http palinode-sweep \
+  --location=us-central1 \
+  --schedule="0 * * * *" \
+  --uri="$SERVICE/sweep?days=45" \
+  --http-method=POST \
+  --oidc-service-account-email=palinode-sweeper@$PROJECT.iam.gserviceaccount.com \
+  --oidc-token-audience="$SERVICE" \
+  --attempt-deadline=300s
+```
+
+Scheduler delivers at least once and Cloud Run answers from more than one
+container, so the sweep claims a run before it touches it. That is not
+theoretical: two sweeps found the same three week old fraud in the same second,
+and the second GitHub revert came back 422 because the ref had already moved.
+Stripe would not have complained. It would have refunded twice.
 
 The runtime service account needs `roles/datastore.user`, `roles/aiplatform.user`,
 `roles/modelarmor.user` and `roles/cloudtrace.agent`. Without the first one the
