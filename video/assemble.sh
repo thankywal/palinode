@@ -112,7 +112,12 @@ while IFS=$'\t' read -r name kind spec offset seconds; do
       # A capture with a camera over it, rendered by Remotion at scale 2 so
       # the magnification rasterises at delivery size rather than being
       # upscaled after the fact. Vendored from video-shotcraft, Apache 2.0.
-      npx remotion render "shot-$spec" "$OUT/shot-$spec.mp4" --scale=2 --log=error
+      # Rendering eight of these at 4K is most of the wall clock in this
+      # script and they do not change when only the cut does. Delete the file
+      # to force one.
+      if [ ! -f "$OUT/shot-$spec.mp4" ]; then
+        npx remotion render "shot-$spec" "$OUT/shot-$spec.mp4" --scale=2 --log=error
+      fi
       ffmpeg -nostdin -v error -y -i "$OUT/shot-$spec.mp4" -t "$seconds" \
         -vf "scale=$W:$H:flags=lanczos,fps=30,format=yuv420p" \
         "${VENC[@]}" -an "$WORK/$name.mp4"

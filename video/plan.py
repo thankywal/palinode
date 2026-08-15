@@ -67,12 +67,12 @@ def main() -> None:
         # Layered sines at frequencies that do not divide into each other, the
         # same trick the vendored handheld noise uses. A purely linear drift
         # is a machine moving the frame; this is closer to a hand holding it.
-        (seg["05-what-came-back"]["start"], "02b-dash-rows", "take",
-         "crop=2560:1440:'620+t*7+9*sin(t*0.62)+5*sin(t*1.66+1.7)'"
-         ":'max(0,40-t*2)+6*sin(t*0.94+0.9)',scale=3840:2160:flags=lanczos"),
-        (seg["06-what-did-not"]["start"], "02c-dash-disclosure", "take",
-         "crop=2560:1440:'1280-t*5+8*sin(t*0.71+2.1)'"
-         ":'720+t*3+6*sin(t*1.07)',scale=3840:2160:flags=lanczos"),
+        # Not crops of the take any more. The board is settled by here and a
+        # crop of a still frame sliding around is a camera move over a
+        # photograph, which is what it looked like. These are compositions
+        # with a light that goes to the row being named.
+        (seg["05-what-came-back"]["start"], "02b-review", "remotion", "Review"),
+        (seg["06-what-did-not"]["start"], "02c-disclosure", "remotion", "Disclosure"),
         # The cold case, in four beats: the run, the score of zero, the
         # report that arrives later, and the scheduler acting on it.
         (seg["07-weeks-later"]["start"], "03-sweeper", "remotion", "Sweeper"),
@@ -145,9 +145,22 @@ def main() -> None:
             ]
             if kind == "console"
         },
+        "review": {
+            "durationInFrames": frames(
+                seg["06-what-did-not"]["start"] - seg["05-what-came-back"]["start"]
+            ),
+            "beats": [rel(seg["05-what-came-back"], n) for n in range(3)],
+        },
+        "disclosure": {
+            "durationInFrames": frames(
+                seg["07-weeks-later"]["start"] - seg["06-what-did-not"]["start"]
+            ),
+            "beats": [rel(seg["06-what-did-not"], n) for n in range(2)],
+        },
+        # Four beats now: what broke, the name, the number, and the ask.
         "outro": {
             "durationInFrames": frames(total - close["start"]),
-            "second": rel(close, 1),
+            "beats": [rel(close, n) for n in range(len(close["lines"]))],
         },
     }
     (HERE / "src" / "timing.json").write_text(json.dumps(cards, indent=2))

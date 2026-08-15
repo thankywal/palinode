@@ -4,6 +4,7 @@ import {Chapter, ChapterProps} from './Chapter';
 import {Invoices} from './Invoices';
 import {Sweeper} from './Sweeper';
 import {ConsoleShot} from './ConsoleShot';
+import {LedgerReview, ROWS} from './LedgerReview';
 import {CONSOLE_SHOTS} from './consoleShots';
 import {Intro} from './Intro';
 import {Outro} from './Outro';
@@ -57,6 +58,46 @@ export const RemotionRoot: React.FC = () => (
       fps={FPS}
       width={1920}
       height={1080}
+    />
+
+    <Composition
+      id="Review"
+      component={LedgerReview}
+      durationInFrames={timing.review.durationInFrames}
+      fps={FPS}
+      width={1920}
+      height={1080}
+      defaultProps={{
+        kicker: 'One run, four of them back',
+        title: 'What came back',
+        accent: theme.green,
+        push: 1.07,
+        marks: [
+          {...ROWS.db, at: timing.review.beats[0] + 46, tone: '#4ADE80'},
+          {...ROWS.slack, at: timing.review.beats[1] + 40, tone: '#FBBF24'},
+          {...ROWS.email, at: timing.review.beats[1] + 132, tone: '#FBBF24'},
+          {...ROWS.stripe, at: timing.review.beats[2] + 62, tone: '#FBBF24'},
+        ],
+      }}
+    />
+
+    <Composition
+      id="Disclosure"
+      component={LedgerReview}
+      durationInFrames={timing.disclosure.durationInFrames}
+      fps={FPS}
+      width={1920}
+      height={1080}
+      defaultProps={{
+        kicker: 'And one that does not',
+        title: 'What could not be taken back',
+        accent: theme.red,
+        push: 1.1,
+        marks: [
+          {...ROWS.wire, at: timing.disclosure.beats[0] + 20, tone: '#F87171'},
+          {...ROWS.disclosure, at: timing.disclosure.beats[1] + 44, label: '$4,200.00', labelSide: 'left', tone: '#F87171'},
+        ],
+      }}
     />
 
     <Composition

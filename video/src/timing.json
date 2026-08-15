@@ -1,38 +1,58 @@
 {
   "fps": 30,
   "intro": {
-    "durationInFrames": 328,
-    "second": 156,
-    "handoff": 233
+    "durationInFrames": 305,
+    "second": 147,
+    "handoff": 223
   },
   "invoices": {
-    "durationInFrames": 1565,
-    "verdictA": 484,
-    "readB": 985,
-    "verdictB": 1291,
-    "punchline": 1351
+    "durationInFrames": 1585,
+    "verdictA": 517,
+    "readB": 1034,
+    "verdictB": 1327,
+    "punchline": 1387
   },
   "sweeper": {
-    "durationInFrames": 878,
+    "durationInFrames": 839,
     "beats": [
       0,
-      120,
-      452,
-      605
+      159,
+      459,
+      623
     ]
   },
   "shots": {
-    "scheduler": 272,
-    "stripe": 146,
-    "github": 169,
-    "slack": 160,
-    "cloudrun": 96,
-    "logs": 101,
-    "trace": 110,
-    "firestore": 345
+    "scheduler": 216,
+    "stripe": 126,
+    "github": 124,
+    "slack": 156,
+    "cloudrun": 122,
+    "logs": 157,
+    "trace": 111,
+    "firestore": 308
+  },
+  "review": {
+    "durationInFrames": 583,
+    "beats": [
+      0,
+      155,
+      394
+    ]
+  },
+  "disclosure": {
+    "durationInFrames": 434,
+    "beats": [
+      0,
+      176
+    ]
   },
   "outro": {
-    "durationInFrames": 414,
-    "second": 224
+    "durationInFrames": 704,
+    "beats": [
+      0,
+      228,
+      427,
+      600
+    ]
   }
 }

@@ -25,8 +25,17 @@ import urllib.request
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from narration import GAP_LINE, GAP_SEGMENT, SEGMENTS  # noqa: E402
 
-VOICE = "en-US-Studio-Q"
-RATE = 0.95
+# Chirp3 rather than Studio. Auditioned five voices on one line and measured
+# how far each read moves: Charon swings 14.4 dB in loudness against Studio-Q's
+# 11.3, sits lower at 121 Hz, and has a comparable pitch spread. The Studio
+# voices are built to be neutral, which is the right choice for a script that
+# is a list and the wrong one for a script about somebody losing money.
+VOICE = "en-US-Chirp3-HD-Charon"
+
+# Charon reads slower than Studio-Q did, and at its natural pace this script
+# runs to four minutes twenty. The brief asks for about four. Ten percent
+# faster brings it to three fifty five and costs nothing anyone can hear.
+RATE = 1.1
 OUT = pathlib.Path(__file__).parent / "audio" / "vo"
 ENDPOINT = "https://texttospeech.googleapis.com/v1/text:synthesize"
 
