@@ -68,19 +68,6 @@ npx remotion render Sweeper  "$OUT/sweeper.mp4"  --scale=2 --log=error
 npx remotion render Outro    "$OUT/outro.mp4"    --scale=2 --log=error
 fi
 
-# ------------------------------------------------------------ console slides
-
-echo "building the console slides"
-node console/build.mjs
-rm -rf console/png
-mkdir -p console/png
-for f in console/slides/*.html; do
-  n=$(basename "$f" .html)
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
-    --screenshot="console/png/$n.png" --window-size=$W,$H --hide-scrollbars \
-    --allow-file-access-from-files "$f" >/dev/null 2>&1
-done
-
 # ------------------------------------------------------------------- shots
 
 # A slow drift, over the length of whatever it is applied to. Held stills used
@@ -121,9 +108,13 @@ while IFS=$'\t' read -r name kind spec offset seconds; do
         -vf "$spec,fps=30,format=yuv420p" \
         "${VENC[@]}" -an "$WORK/$name.mp4"
       ;;
-    still)
-      ffmpeg -nostdin -v error -y -loop 1 -t "$seconds" -i "console/png/$spec.png" \
-        -vf "$(drift "$seconds"),fps=30,format=yuv420p" \
+    console)
+      # A capture with a camera over it, rendered by Remotion at scale 2 so
+      # the magnification rasterises at delivery size rather than being
+      # upscaled after the fact. Vendored from video-shotcraft, Apache 2.0.
+      npx remotion render "shot-$spec" "$OUT/shot-$spec.mp4" --scale=2 --log=error
+      ffmpeg -nostdin -v error -y -i "$OUT/shot-$spec.mp4" -t "$seconds" \
+        -vf "scale=$W:$H:flags=lanczos,fps=30,format=yuv420p" \
         "${VENC[@]}" -an "$WORK/$name.mp4"
       ;;
     *)

@@ -64,21 +64,26 @@ def main() -> None:
         # a little across the shot: the board is still by then and a frame that
         # is perfectly still for twenty seconds reads as a screenshot.
         (seg["03-fleet-acts"]["start"], "02a-dash-wide", "take", "null"),
+        # Layered sines at frequencies that do not divide into each other, the
+        # same trick the vendored handheld noise uses. A purely linear drift
+        # is a machine moving the frame; this is closer to a hand holding it.
         (seg["05-what-came-back"]["start"], "02b-dash-rows", "take",
-         "crop=2560:1440:'620+t*7':'max(0,40-t*2)',scale=3840:2160:flags=lanczos"),
+         "crop=2560:1440:'620+t*7+9*sin(t*0.62)+5*sin(t*1.66+1.7)'"
+         ":'max(0,40-t*2)+6*sin(t*0.94+0.9)',scale=3840:2160:flags=lanczos"),
         (seg["06-what-did-not"]["start"], "02c-dash-disclosure", "take",
-         "crop=2560:1440:'1280-t*5':'720+t*3',scale=3840:2160:flags=lanczos"),
+         "crop=2560:1440:'1280-t*5+8*sin(t*0.71+2.1)'"
+         ":'720+t*3+6*sin(t*1.07)',scale=3840:2160:flags=lanczos"),
         # The cold case, in four beats: the run, the score of zero, the
         # report that arrives later, and the scheduler acting on it.
         (seg["07-weeks-later"]["start"], "03-sweeper", "remotion", "Sweeper"),
-        (line_start("07-weeks-later", 3), "04-scheduler", "still", "scheduler"),
-        (line_start("08-it-was-real", 0), "05-stripe", "still", "stripe"),
-        (line_start("08-it-was-real", 1), "06-github", "still", "github"),
-        (line_start("08-it-was-real", 2), "07-slack", "still", "slack"),
-        (line_start("09-google-cloud", 0), "08-cloudrun", "still", "cloudrun"),
-        (line_start("09-google-cloud", 1), "09-logs", "still", "logs"),
-        (line_start("09-google-cloud", 2), "10-trace", "still", "trace"),
-        (line_start("09-google-cloud", 3), "11-firestore", "still", "firestore"),
+        (line_start("07-weeks-later", 3), "04-scheduler", "console", "scheduler"),
+        (line_start("08-it-was-real", 0), "05-stripe", "console", "stripe"),
+        (line_start("08-it-was-real", 1), "06-github", "console", "github"),
+        (line_start("08-it-was-real", 2), "07-slack", "console", "slack"),
+        (line_start("09-google-cloud", 0), "08-cloudrun", "console", "cloudrun"),
+        (line_start("09-google-cloud", 1), "09-logs", "console", "logs"),
+        (line_start("09-google-cloud", 2), "10-trace", "console", "trace"),
+        (line_start("09-google-cloud", 3), "11-firestore", "console", "firestore"),
         (seg["10-close"]["start"], "12-outro", "remotion", "Outro"),
         (total, "", "", ""),
     ]
@@ -127,6 +132,18 @@ def main() -> None:
                 seg["08-it-was-real"]["start"] - sweep["start"]
             ),
             "beats": [rel(sweep, n) for n in range(len(sweep["lines"]))],
+        },
+        # Every console shot is its own composition, rendered to the length
+        # its line takes, because the camera move has to arrive when the
+        # sentence does.
+        "shots": {
+            spec: frames(seconds)
+            for name, kind, spec, offset, seconds in [
+                (r.split("\t")[0], r.split("\t")[1], r.split("\t")[2],
+                 r.split("\t")[3], float(r.split("\t")[4]))
+                for r in rows
+            ]
+            if kind == "console"
         },
         "outro": {
             "durationInFrames": frames(total - close["start"]),

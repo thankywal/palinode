@@ -3,6 +3,8 @@ import {Composition} from 'remotion';
 import {Chapter, ChapterProps} from './Chapter';
 import {Invoices} from './Invoices';
 import {Sweeper} from './Sweeper';
+import {ConsoleShot} from './ConsoleShot';
+import {CONSOLE_SHOTS} from './consoleShots';
 import {Intro} from './Intro';
 import {Outro} from './Outro';
 import {FPS, theme} from './theme';
@@ -74,5 +76,17 @@ export const RemotionRoot: React.FC = () => (
       width={1920}
       height={1080}
     />
+    {Object.entries(CONSOLE_SHOTS).map(([name, props]) => (
+      <Composition
+        key={name}
+        id={`shot-${name}`}
+        component={ConsoleShot}
+        durationInFrames={(timing.shots as Record<string, number>)[name] ?? 150}
+        fps={FPS}
+        width={1920}
+        height={1080}
+        defaultProps={props}
+      />
+    ))}
   </>
 );

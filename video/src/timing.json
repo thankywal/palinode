@@ -21,6 +21,16 @@
       605
     ]
   },
+  "shots": {
+    "scheduler": 272,
+    "stripe": 146,
+    "github": 169,
+    "slack": 160,
+    "cloudrun": 96,
+    "logs": 101,
+    "trace": 110,
+    "firestore": 345
+  },
   "outro": {
     "durationInFrames": 414,
     "second": 224
