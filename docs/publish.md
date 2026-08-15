@@ -28,8 +28,16 @@ covers both with one file.
     and the deletion. The wire transfer is the one that does not come back,
     and the system says so instead of pretending.
 
-    Built on Google ADK, Gemini 3.5 Flash on Vertex AI, Model Armor, Firestore
-    and Cloud Trace. The soundtrack is Lyria. The narration is Cloud TTS.
+    Two things in here were measured rather than assumed. Model Armor catches
+    the prompt injection at high confidence when it is screened on its own,
+    and returns NO_MATCH_FOUND on the same words inside the full invoice page,
+    which is why the pipeline extracts before it screens. And the scheduled
+    sweep found a concurrency defect in itself within a minute of going live.
+
+    Built on Google ADK, Gemini 3.5 Flash on Vertex AI including the
+    multimodal document read, Model Armor, Cloud Run, Firestore, Cloud
+    Scheduler and Cloud Trace. The soundtrack is Lyria. The narration is
+    Cloud TTS.
 
     I created this video for the purposes of entering the All Things Agentic
     Hackathon.
@@ -38,11 +46,12 @@ covers both with one file.
     Live: https://palinode-173485225974.us-central1.run.app
 
     00:00  A palinode is a poem that takes back an earlier poem
-    00:10  Two invoices, and the one Model Armor cannot catch
-    00:41  The fleet acts, and Sentinel reverses it on its own
-    01:55  Stripe, GitHub and Slack, after the fact
-    02:10  Where it runs
-    02:31  What connecting the real systems broke
+    00:11  Two invoices, read off the page, and the one that gets through
+    01:04  The fleet acts, and Sentinel reverses it on its own
+    02:19  The other kind of incident, three weeks late
+    02:48  Stripe, GitHub and Slack, after the fact
+    03:04  Where it runs
+    03:26  What connecting the real systems broke
 
 Then paste the watch URL back here and it goes on the submission.
 

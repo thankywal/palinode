@@ -57,11 +57,17 @@ def main() -> None:
     cuts = [
         (0.0, "00-intro", "remotion", "Intro"),
         (seg["02-two-invoices"]["start"], "01-invoices", "remotion", "Invoices"),
-        (seg["03-fleet-acts"]["start"], "02a-dash-wide", "take", "scale=1920:1080"),
+        # The take is 4K, so the wide shot is delivered untouched. The two
+        # framings that follow are cut out of it at 2560x1440 rather than
+        # 1920x1080 and brought up to delivery size, because a one and a half
+        # times scale holds together and a two times scale does not. Both drift
+        # a little across the shot: the board is still by then and a frame that
+        # is perfectly still for twenty seconds reads as a screenshot.
+        (seg["03-fleet-acts"]["start"], "02a-dash-wide", "take", "null"),
         (seg["05-what-came-back"]["start"], "02b-dash-rows", "take",
-         "crop=1920:1080:940:170"),
+         "crop=2560:1440:'620+t*7':'max(0,40-t*2)',scale=3840:2160:flags=lanczos"),
         (seg["06-what-did-not"]["start"], "02c-dash-disclosure", "take",
-         "crop=1920:1080:1920:1080"),
+         "crop=2560:1440:'1280-t*5':'720+t*3',scale=3840:2160:flags=lanczos"),
         # The cold case, in four beats: the run, the score of zero, the
         # report that arrives later, and the scheduler acting on it.
         (seg["07-weeks-later"]["start"], "03-sweeper", "remotion", "Sweeper"),

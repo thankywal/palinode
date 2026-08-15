@@ -19,6 +19,14 @@ import {fileURLToPath} from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 /**
+ * Delivery is 4K, so the slide is laid out at 4K and every capture is taken
+ * from console/hi, which holds one clean 2x upscale of each shot. Letting the
+ * browser scale at build time and the encoder scale again at cut time meant
+ * the same pixels were resampled twice, and it showed.
+ */
+const K = 2;
+
+/**
  * Native size of a capture. Displayed one to one, never scaled.
  *
  * Most of these came out of the same window so they share a size, but the
@@ -26,8 +34,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
  * is exactly the resampling this file exists to avoid. So a slide may carry
  * its own.
  */
-const SHOT_W = 1568;
-const SHOT_H = 764;
+const SHOT_W = 1568 * K;
+const SHOT_H = 764 * K;
 
 const SKY = '#38BDF8';
 const VIOLET = '#C084FC';
@@ -70,8 +78,8 @@ const SLIDES = [
   {
     file: 'p8-scheduler.jpg',
     name: 'scheduler',
-    w: 1512,
-    h: 801,
+    w: 1512 * K,
+    h: 345 * K,
     group: 'WEEKS LATER',
     index: '04',
     title: 'Cloud Scheduler',
@@ -123,7 +131,7 @@ const SLIDES = [
 const page = (slide, dataUri, w, h) => `<!doctype html>
 <html><head><meta charset="utf-8"><style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html,body { width:1920px; height:1080px; }
+  html,body { width:${1920 * K}px; height:${1080 * K}px; }
   body {
     background:#0B1020;
     font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -132,33 +140,33 @@ const page = (slide, dataUri, w, h) => `<!doctype html>
   .glow {
     position:absolute; inset:0;
     background:
-      radial-gradient(900px circle at 6% -8%, rgba(56,189,248,.16), transparent 60%),
-      radial-gradient(900px circle at 100% 108%, rgba(248,113,113,.12), transparent 60%);
+      radial-gradient(${900 * K}px circle at 6% -8%, rgba(56,189,248,.16), transparent 60%),
+      radial-gradient(${900 * K}px circle at 100% 108%, rgba(248,113,113,.12), transparent 60%);
   }
   .wrap {
     position:relative; height:100%;
     display:flex; flex-direction:column; align-items:center;
-    padding:72px 0 0;
+    padding:${72 * K}px 0 0;
   }
   .head {
-    width:${w}px; display:flex; align-items:flex-end; gap:22px; margin-bottom:22px;
+    width:${w}px; display:flex; align-items:flex-end; gap:${22 * K}px; margin-bottom:${22 * K}px;
   }
-  .bar { width:6px; height:62px; border-radius:4px; background:${slide.accent}; }
+  .bar { width:${6 * K}px; height:${62 * K}px; border-radius:${4 * K}px; background:${slide.accent}; }
   .idx {
-    font-family:ui-monospace,Menlo,monospace; font-size:15px; letter-spacing:3.5px;
+    font-family:ui-monospace,Menlo,monospace; font-size:${15 * K}px; letter-spacing:${3.5 * K}px;
     color:${slide.accent}; font-weight:700;
   }
-  .title { font-size:44px; font-weight:800; letter-spacing:-1px; margin-top:5px; line-height:1; }
+  .title { font-size:${44 * K}px; font-weight:800; letter-spacing:${-1 * K}px; margin-top:${5 * K}px; line-height:1; }
   .cap {
-    font-size:21px; color:#8FA0BC; margin-left:auto; max-width:820px;
+    font-size:${21 * K}px; color:#8FA0BC; margin-left:auto; max-width:${820 * K}px;
     text-align:right; line-height:1.4;
   }
   /* One to one. No width, no height, no object-fit, nothing that resamples. */
   .shot {
     width:${w}px; height:${h}px;
-    border-radius:12px; overflow:hidden;
-    border:1px solid rgba(255,255,255,.16);
-    box-shadow:0 30px 90px rgba(0,0,0,.55);
+    border-radius:${12 * K}px; overflow:hidden;
+    border:${1 * K}px solid rgba(255,255,255,.16);
+    box-shadow:0 ${30 * K}px ${90 * K}px rgba(0,0,0,.55);
   }
   .shot img { display:block; }
 </style></head><body>
@@ -179,7 +187,7 @@ const page = (slide, dataUri, w, h) => `<!doctype html>
 mkdirSync(join(HERE, 'slides'), {recursive: true});
 
 SLIDES.forEach((slide) => {
-  const bytes = readFileSync(join(HERE, slide.file));
+  const bytes = readFileSync(join(HERE, 'hi', slide.file));
   const uri = `data:image/jpeg;base64,${bytes.toString('base64')}`;
   const name = `${slide.name}.html`;
   writeFileSync(
