@@ -58,11 +58,15 @@ mkdir -p "$WORK"
 
 # scale 2 renders the 1920x1080 compositions at 4K for real. Every glyph and
 # every border is drawn at the delivery size rather than blown up afterwards.
+if [ "${SKIP_CARDS:-0}" = "1" ]; then
+  echo "reusing the rendered cards"
+else
 echo "rendering the cards at 4K"
 npx remotion render Intro    "$OUT/intro.mp4"    --scale=2 --log=error
 npx remotion render Invoices "$OUT/invoices.mp4" --scale=2 --log=error
 npx remotion render Sweeper  "$OUT/sweeper.mp4"  --scale=2 --log=error
 npx remotion render Outro    "$OUT/outro.mp4"    --scale=2 --log=error
+fi
 
 # ------------------------------------------------------------ console slides
 
@@ -79,13 +83,20 @@ done
 
 # ------------------------------------------------------------------- shots
 
-# A slow push, over the length of whatever it is applied to. Held stills used
-# to be held absolutely still, which was the right call when a zoom cost six
+# A slow drift, over the length of whatever it is applied to. Held stills used
+# to be held absolutely still, which was the right call when a move cost six
 # minutes of encoding on the CPU. On the GPU it costs nothing, and evidence
 # that drifts very slightly reads as a camera rather than as a slide.
-push() {
-  local frames=$1 from=$2 to=$3
-  echo "zoompan=z='min($from+($to-$from)*on/$frames,$to)':d=1:x='iw/2-(iw/z/2)':y='ih/2-(ih/z/2)':s=${W}x${H}:fps=30"
+#
+# A pan rather than a zoom, deliberately. zoompan rounds its offsets to whole
+# pixels, and a four percent zoom across five seconds at 4K moves the frame by
+# less than a pixel per frame, so the rounding shows up as a stutter. A linear
+# translation of about a pixel a frame does not.
+drift() {
+  local seconds=$1
+  local up=$(python3 -c "print(int($W*1.05//2*2))")
+  local upy=$(python3 -c "print(int($H*1.05//2*2))")
+  echo "scale=$up:$upy:flags=lanczos,crop=$W:$H:'($up-$W)*t/$seconds':'($upy-$H)*t/$seconds'"
 }
 
 echo "cutting"
@@ -112,7 +123,7 @@ while IFS=$'\t' read -r name kind spec offset seconds; do
       ;;
     still)
       ffmpeg -nostdin -v error -y -loop 1 -t "$seconds" -i "console/png/$spec.png" \
-        -vf "$(push "$frames" 1.0 1.045),format=yuv420p" \
+        -vf "$(drift "$seconds"),fps=30,format=yuv420p" \
         "${VENC[@]}" -an "$WORK/$name.mp4"
       ;;
     *)
