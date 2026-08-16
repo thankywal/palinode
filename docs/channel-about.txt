@@ -1,0 +1,11 @@
+In classical poetry, a palinode is a poem written to take back what an earlier poem said.
+
+Palinode is an autonomous agent fleet that does the same thing for AI agents. Most agent platforms solve prevention: a policy engine, a kill switch, a trace viewer. A kill switch stops the bleeding. It does not put the blood back.
+
+This is the other half. Palinode watches what a fleet of production agents actually did, decides on its own that something has to be taken back, and reverses it across Stripe, GitHub, Slack and a database, in reverse order of cause. Nobody presses a button.
+
+Some actions do not come back. A settled wire transfer is one. When that happens it writes the disclosure and names the damage instead of pretending.
+
+Built on Google ADK, Gemini 3.5 Flash on Vertex AI, Cloud Run and Firestore.
+
+Code: https://github.com/thankywal/palinode

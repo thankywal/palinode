@@ -56,7 +56,9 @@ covers both with one file.
     03:04  Where it runs
     03:26  What connecting the real systems broke
 
-Then paste the watch URL back here and it goes on the submission.
+Uploaded: https://youtu.be/AdAM5l4tWAY
+
+The channel About text is in docs/channel-about.txt.
 
 ---
 
