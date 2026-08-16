@@ -2,3 +2,18 @@ node_modules/
 out/
 console/slides/
 console/png/
+
+# Audio that a script writes. All of it was tracked for a while, and since
+# mixdown.sh rewrites these files on every run, each rebuild added another
+# forty five megabytes to the history: 1,451 MB across fifty nine blobs of
+# build output, in a repository whose source is fourteen.
+#
+# Everything ignored here regenerates: speak.py writes the narration, score.py
+# writes the Lyria pieces from fixed seeds, mixdown.sh writes the rest.
+# audio/sfx is deliberately not ignored, because those came from Mixkit and
+# nothing in this tree can produce them again.
+audio/build/
+audio/vo/
+audio/score/
+audio/voices/
+audio/bed.wav
