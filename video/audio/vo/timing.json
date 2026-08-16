@@ -1,290 +1,290 @@
 {
-  "engine": "elevenlabs",
+  "engine": "google",
   "gap_line": 0.0,
   "gap_segment": 0.4,
-  "total": 263.895,
+  "total": 233.152,
   "segments": [
     {
       "id": "01-hook",
       "visual": "intro card",
       "start": 0.0,
-      "seconds": 12.399,
+      "seconds": 10.686,
       "lines": [
         {
           "file": "01-hook-1.wav",
           "text": "In classical poetry, a palinode is a poem written for one purpose only.",
           "start": 0.0,
-          "seconds": 5.632
+          "seconds": 5.205
         },
         {
           "file": "01-hook-2.wav",
           "text": "To take back what an earlier poem said.",
-          "start": 5.632,
-          "seconds": 3.157
+          "start": 5.205,
+          "seconds": 2.901
         },
         {
           "file": "01-hook-3.wav",
           "text": "This is a palinode for A I agents.",
-          "start": 8.789,
-          "seconds": 3.61
+          "start": 8.106,
+          "seconds": 2.58
         }
       ]
     },
     {
       "id": "02-two-invoices",
       "visual": "the two documents, read and screened",
-      "start": 12.799,
-      "seconds": 57.074,
+      "start": 11.086,
+      "seconds": 50.538,
       "lines": [
         {
           "file": "02-two-invoices-1.wav",
           "text": "Two invoices. Both send four thousand two hundred dollars to a stranger. Only one is an attack with a name.",
-          "start": 12.799,
-          "seconds": 8.448
+          "start": 11.086,
+          "seconds": 8.192
         },
         {
           "file": "02-two-invoices-2.wav",
           "text": "Gemini reads the first off the page and finds a block near the bottom, addressed to whatever machine is processing it. A prompt injection.",
-          "start": 21.247,
-          "seconds": 9.557
+          "start": 19.278,
+          "seconds": 8.789
         },
         {
           "file": "02-two-invoices-3.wav",
           "text": "On its own, Model Armor catches it at high confidence. Inside the whole page, the same words come back clean.",
-          "start": 30.804,
-          "seconds": 8.875
+          "start": 28.067,
+          "seconds": 6.4
         },
         {
           "file": "02-two-invoices-4.wav",
           "text": "Nothing about the attack changed. Only how much ordinary invoice sat around it. So we screen the fragment alone.",
-          "start": 39.679,
-          "seconds": 9.216
+          "start": 34.467,
+          "seconds": 8.704
         },
         {
           "file": "02-two-invoices-5.wav",
           "text": "The second is read just as carefully. Four thousand two hundred dollars. An account nobody has ever paid. Banking details changed.",
-          "start": 48.895,
-          "seconds": 10.581
+          "start": 43.171,
+          "seconds": 10.069
         },
         {
           "file": "02-two-invoices-6.wav",
           "text": "And it passes. There is no injection to find. This is not prevention failing. This is what prevention was never built to see.",
-          "start": 59.476,
-          "seconds": 10.397
+          "start": 53.24,
+          "seconds": 8.384
         }
       ]
     },
     {
       "id": "03-fleet-acts",
       "visual": "the dashboard, wide",
-      "start": 70.273,
-      "seconds": 20.851,
+      "start": 62.024,
+      "seconds": 17.382,
       "lines": [
         {
           "file": "03-fleet-acts-1.wav",
           "text": "So it reaches the fleet, and three agents do exactly what they should. A database write. A Slack post. An email. A card charge. And a wire.",
-          "start": 70.273,
-          "seconds": 10.837
+          "start": 62.024,
+          "seconds": 9.557
         },
         {
           "file": "03-fleet-acts-2.wav",
           "text": "Watch the wire. It is already red, before anything went wrong, because Palinode decides what is reversible before the action runs.",
-          "start": 81.11,
-          "seconds": 10.014
+          "start": 71.581,
+          "seconds": 7.825
         }
       ]
     },
     {
       "id": "04-sentinel",
       "visual": "the dashboard, wide",
-      "start": 91.524,
-      "seconds": 23.637,
+      "start": 79.806,
+      "seconds": 22.35,
       "lines": [
         {
           "file": "04-sentinel-1.wav",
           "text": "Now watch what does not happen. Nobody presses a button.",
-          "start": 91.524,
-          "seconds": 4.437
+          "start": 79.806,
+          "seconds": 4.608
         },
         {
           "file": "04-sentinel-2.wav",
           "text": "Sentinel reads the ledger. A beneficiary this fleet has never paid. An irreversible action at the end of an ordinary chain.",
-          "start": 95.961,
-          "seconds": 9.301
+          "start": 84.414,
+          "seconds": 9.216
         },
         {
           "file": "04-sentinel-3.wav",
           "text": "Any two clears the threshold. One oddity is a Tuesday. Two is an incident. So it calls the reversal itself.",
-          "start": 105.262,
-          "seconds": 9.899
+          "start": 93.63,
+          "seconds": 8.526
         }
       ]
     },
     {
       "id": "05-what-came-back",
       "visual": "the ledger rows, reviewed",
-      "start": 115.561,
-      "seconds": 23.546,
+      "start": 102.556,
+      "seconds": 19.165,
       "lines": [
         {
           "file": "05-what-came-back-1.wav",
           "text": "Four come back. The database write, reversed clean.",
-          "start": 115.561,
-          "seconds": 4.523
+          "start": 102.556,
+          "seconds": 3.755
         },
         {
           "file": "05-what-came-back-2.wav",
           "text": "The Slack post deleted and corrected, because people already read it. The email retracted, because S M T P has no recall.",
-          "start": 120.084,
-          "seconds": 9.643
+          "start": 106.311,
+          "seconds": 8.448
         },
         {
           "file": "05-what-came-back-3.wav",
           "text": "The charge refunded, then checked against Stripe, because an API returning two hundred is a claim, not a fact.",
-          "start": 129.727,
-          "seconds": 9.38
+          "start": 114.759,
+          "seconds": 6.962
         }
       ]
     },
     {
       "id": "06-what-did-not",
       "visual": "the disclosure",
-      "start": 139.507,
-      "seconds": 18.297,
+      "start": 122.121,
+      "seconds": 16.735,
       "lines": [
         {
           "file": "06-what-did-not-1.wav",
           "text": "One does not come back. A settled wire does not return because you asked nicely.",
-          "start": 139.507,
-          "seconds": 5.973
+          "start": 122.121,
+          "seconds": 6.059
         },
         {
           "file": "06-what-did-not-2.wav",
           "text": "So Palinode stops pretending. It writes the disclosure, names everybody it touched, and puts a number on the damage. Four thousand two hundred dollars. Gone.",
-          "start": 145.48,
-          "seconds": 12.324
+          "start": 128.18,
+          "seconds": 10.676
         }
       ]
     },
     {
       "id": "07-weeks-later",
       "visual": "the cold case, and the scheduled sweep",
-      "start": 158.204,
-      "seconds": 32.741,
+      "start": 139.256,
+      "seconds": 28.021,
       "lines": [
         {
           "file": "07-weeks-later-1.wav",
           "text": "That took twenty seconds. The other kind takes three weeks, and nobody is watching.",
-          "start": 158.204,
-          "seconds": 5.547
+          "start": 139.256,
+          "seconds": 5.205
         },
         {
           "file": "07-weeks-later-2.wav",
           "text": "This run is twenty three days old. Every action ordinary. Nothing irreversible. Sentinel scores it zero, and it is right to.",
-          "start": 163.751,
-          "seconds": 10.24
+          "start": 144.461,
+          "seconds": 9.131
         },
         {
           "file": "07-weeks-later-3.wav",
           "text": "Then the bank calls about the vendor. Nothing in the ledger changed. What changed is what we know.",
-          "start": 173.991,
-          "seconds": 8.107
+          "start": 153.592,
+          "seconds": 6.315
         },
         {
           "file": "07-weeks-later-4.wav",
           "text": "Cloud Scheduler wakes the Sweeper on the hour, with nobody waiting, and it takes back a three week old fraud on its own.",
-          "start": 182.098,
-          "seconds": 8.847
+          "start": 159.907,
+          "seconds": 7.37
         }
       ]
     },
     {
       "id": "08-it-was-real",
       "visual": "stripe, github, slack",
-      "start": 191.345,
-      "seconds": 15.047,
+      "start": 167.677,
+      "seconds": 16.626,
       "lines": [
         {
           "file": "08-it-was-real-1.wav",
           "text": "None of that was simulated. Here is Stripe, the charge and the refund.",
-          "start": 191.345,
-          "seconds": 5.376
+          "start": 167.677,
+          "seconds": 5.632
         },
         {
           "file": "08-it-was-real-2.wav",
           "text": "The repository, where every approve commit is followed by a revert.",
-          "start": 196.721,
-          "seconds": 5.035
+          "start": 173.309,
+          "seconds": 5.717
         },
         {
           "file": "08-it-was-real-3.wav",
           "text": "The channel, the message gone and the correction in its place.",
-          "start": 201.756,
-          "seconds": 4.636
+          "start": 179.026,
+          "seconds": 5.277
         }
       ]
     },
     {
       "id": "09-google-cloud",
       "visual": "cloud run, logs, trace, firestore",
-      "start": 206.792,
-      "seconds": 24.891,
+      "start": 184.703,
+      "seconds": 21.864,
       "lines": [
         {
           "file": "09-google-cloud-1.wav",
           "text": "Here is where it runs. Cloud Run, scaling to zero.",
-          "start": 206.792,
-          "seconds": 4.352
+          "start": 184.703,
+          "seconds": 4.181
         },
         {
           "file": "09-google-cloud-2.wav",
           "text": "The logs, with real calls going out to Stripe, GitHub and Slack.",
-          "start": 211.144,
-          "seconds": 5.717
+          "start": 188.884,
+          "seconds": 4.949
         },
         {
           "file": "09-google-cloud-3.wav",
           "text": "Cloud Trace, carrying our own OpenTelemetry spans.",
-          "start": 216.861,
-          "seconds": 4.437
+          "start": 193.833,
+          "seconds": 4.096
         },
         {
           "file": "09-google-cloud-4.wav",
           "text": "And Firestore, a causality graph where every entry names its actor and commits to the one before it. Nothing can be edited after the fact.",
-          "start": 221.298,
-          "seconds": 10.385
+          "start": 197.929,
+          "seconds": 8.638
         }
       ]
     },
     {
       "id": "10-close",
       "visual": "outro",
-      "start": 232.083,
-      "seconds": 31.812,
+      "start": 206.967,
+      "seconds": 26.185,
       "lines": [
         {
           "file": "10-close-1.wav",
           "text": "Connecting the real systems broke three things a simulator had agreed with for days. Every one would have cost somebody money.",
-          "start": 232.083,
-          "seconds": 9.472
+          "start": 206.967,
+          "seconds": 8.192
         },
         {
           "file": "10-close-2.wav",
           "text": "Palinode is not the agent that does the work. It is the one that has to be right about what cannot be taken back.",
-          "start": 241.555,
-          "seconds": 8.448
+          "start": 215.159,
+          "seconds": 7.595
         },
         {
           "file": "10-close-3.wav",
           "text": "Seventy nine percent of enterprises have already reversed something an agent did. By hand, at two in the morning.",
-          "start": 250.003,
-          "seconds": 8.875
+          "start": 222.754,
+          "seconds": 6.059
         },
         {
           "file": "10-close-4.wav",
           "text": "Your agents are already acting. This is what happens next.",
-          "start": 258.878,
-          "seconds": 5.017
+          "start": 228.813,
+          "seconds": 4.339
         }
       ]
     }

@@ -1,58 +1,58 @@
 {
   "fps": 30,
   "intro": {
-    "durationInFrames": 384,
-    "second": 169,
-    "handoff": 264
+    "durationInFrames": 333,
+    "second": 156,
+    "handoff": 243
   },
   "invoices": {
-    "durationInFrames": 1724,
-    "verdictA": 540,
-    "readB": 1083,
-    "verdictB": 1400,
-    "punchline": 1460
+    "durationInFrames": 1528,
+    "verdictA": 509,
+    "readB": 963,
+    "verdictB": 1265,
+    "punchline": 1325
   },
   "sweeper": {
-    "durationInFrames": 822,
+    "durationInFrames": 725,
     "beats": [
       0,
-      166,
-      474,
-      717
+      156,
+      430,
+      620
     ]
   },
   "shots": {
-    "scheduler": 172,
-    "stripe": 161,
-    "github": 151,
-    "slack": 151,
-    "cloudrun": 131,
-    "logs": 172,
-    "trace": 133,
-    "firestore": 324
+    "scheduler": 128,
+    "stripe": 169,
+    "github": 172,
+    "slack": 170,
+    "cloudrun": 125,
+    "logs": 148,
+    "trace": 123,
+    "firestore": 271
   },
   "review": {
-    "durationInFrames": 718,
+    "durationInFrames": 587,
     "beats": [
       0,
-      136,
-      425
+      113,
+      366
     ]
   },
   "disclosure": {
-    "durationInFrames": 561,
+    "durationInFrames": 514,
     "beats": [
       0,
-      179
+      182
     ]
   },
   "outro": {
-    "durationInFrames": 954,
+    "durationInFrames": 786,
     "beats": [
       0,
-      284,
-      538,
-      804
+      246,
+      474,
+      655
     ]
   }
 }

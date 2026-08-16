@@ -36,8 +36,9 @@ covers both with one file.
 
     Built on Google ADK, Gemini 3.5 Flash on Vertex AI including the
     multimodal document read, Model Armor, Cloud Run, Firestore, Cloud
-    Scheduler and Cloud Trace. The score is generated with Lyria. Narration
-    voiced with ElevenLabs. Sound effects from Mixkit.
+    Scheduler and Cloud Trace. The score is generated with Lyria, the
+    narration voiced with Chirp3 HD and cut to the words with Speech to Text.
+    Sound effects from Mixkit.
 
     I created this video for the purposes of entering the All Things Agentic
     Hackathon.
