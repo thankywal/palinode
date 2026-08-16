@@ -47,10 +47,12 @@ covers both with one file.
     Live: https://palinode-173485225974.us-central1.run.app
 
     00:00  A palinode is a poem that takes back an earlier poem
-    00:11  Two invoices, read off the page, and the one that gets through
-    01:04  The fleet acts, and Sentinel reverses it on its own
+    00:11  Two invoices, and the one that gets through
+    01:02  The fleet acts, and one action cannot be undone
+    01:19  Nobody presses a button
+    01:42  Four come back, one does not
     02:19  The other kind of incident, three weeks late
-    02:48  Stripe, GitHub and Slack, after the fact
+    02:47  Stripe, GitHub and Slack, after the fact
     03:04  Where it runs
     03:26  What connecting the real systems broke
 
