@@ -38,3 +38,39 @@ claiming coverage.
 
 None of the stand ins are presented as the Google product. Where the film or
 the story says SPIFFE shaped, it means shaped like, not issued by.
+
+## The form, field by field
+
+Filled in by hand on Devpost. Kept here so the answers are decided once rather
+than composed under time pressure at the form.
+
+| Field | Answer |
+|---|---|
+| Submitter type | Organization |
+| Country of residence | Thailand |
+| Category | Fortified Enterprise Fleet |
+| Organization name | Oro Shin |
+| Start date | 08-14-26 |
+| Code repo | https://github.com/thankywal/palinode |
+| Reproducible testing in README | Yes |
+| Hosted project URL | https://palinode-173485225974.us-central1.run.app |
+| Google SDK | Agent Development Kit (ADK), Google GenAI SDK |
+| Google Cloud services | Cloud Run, Firestore |
+| Google AI models | Gemini 3.5 Flash, Lyria, Chirp3 HD, Speech to Text |
+| Startup prize, organization | Oro Shin |
+| Startup prize, corporate email | thankywal_ceo@oroshin.site |
+| Bonus, content | https://youtu.be/AdAM5l4tWAY |
+| Bonus, social post | LinkedIn, text in `publish.md` |
+| Architecture diagram | `docs/architecture.png`, uploaded to the form |
+
+The demo video is https://youtu.be/AdAM5l4tWAY, public, 3:53.
+
+## Two things the API cannot do
+
+Gallery images and the architecture diagram attachment are not editable over
+the Devpost MCP, so both are done by hand:
+
+- the first gallery image is an older architecture diagram naming Gemma, Cloud
+  Tasks, Cloud SQL, Pub/Sub and a VPC, none of which this project uses. It has
+  to be deleted, and the current `docs/architecture.png` moved first
+- the architecture diagram field has a duplicate attachment on it

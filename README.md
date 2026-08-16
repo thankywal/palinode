@@ -14,7 +14,14 @@ and reports the exposure.
 
 Built with the Google Agent Development Kit, Gemini 3.5 Flash and Model Armor.
 
-**Live:** https://palinode-173485225974.us-central1.run.app
+**Demo:** https://youtu.be/AdAM5l4tWAY — four minutes, against the deployed
+service. The charge, the commit and the Slack message in it are real, and so
+are the refund, the revert and the deletion.
+
+**Live:** https://palinode-173485225974.us-central1.run.app — running with the
+live connectors switched off, which `/status` will tell you. The endpoints that
+reverse things answer without a login, because a demo has to be reachable and
+an endpoint that moves money should not be both.
 
 ![architecture](docs/architecture.png)
 
