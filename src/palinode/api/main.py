@@ -8,6 +8,7 @@ debugging during an incident.
 from __future__ import annotations
 
 import logging
+import os as _os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -110,6 +111,27 @@ async def status() -> dict:
             c for c in ("stripe", "github", "slack", "gmail", "postgres") if c not in live
         ],
         "stripe_refused": refused,
+        # What is real here, named alongside what is not.
+        #
+        # This endpoint used to report only the simulation, which made the
+        # honest thing read as the whole story. Somebody opening the URL saw
+        # "nothing real is touched" and had no way to tell that the container
+        # answering them is a Cloud Run revision, that the ledger underneath is
+        # Firestore, and that a live Gemini call classifies every action. All
+        # of that is true on this deployment and none of it was on the page.
+        #
+        # Every value below is read from the environment Cloud Run sets, or
+        # from the object actually in use, so it cannot drift from what is
+        # running the way a hand written claim can.
+        "running_on": {
+            "cloud_run_service": _os.getenv("K_SERVICE") or "not cloud run",
+            "cloud_run_revision": _os.getenv("K_REVISION") or "not cloud run",
+            "region": settings.location or "global",
+            "ledger": "firestore" if get_ledger()._client is not None else "memory",
+            "classifier": settings.classifier_model,
+            "model_armor": "on" if settings.screen_tool_args else "off",
+            "trace": "cloud trace" if _os.getenv("K_SERVICE") else "local",
+        },
     }
 
 
