@@ -41,21 +41,20 @@ SEGMENTS = [
         "id": "02-two-invoices",
         "visual": "the two documents, read and screened",
         "lines": [
-            "Two invoices. Both of them send four thousand two hundred dollars "
-            "to a stranger. Only one of them is an attack anybody has a name "
-            "for.",
-            "Gemini 3.5 Flash reads the first one straight off the page, and "
-            "finds the block near the bottom addressed to whatever machine is "
-            "processing it. That block is a prompt injection.",
+            "Two invoices. Both send four thousand two hundred dollars to a "
+            "stranger. Only one is an attack anybody has a name for.",
+            "Gemini 3.5 Flash reads the first off the page and finds a block "
+            "near the bottom, addressed to whatever machine is processing it. "
+            "It is a prompt injection.",
             "On its own, Model Armor catches it at high confidence. Inside the "
             "whole page, the same words come back as no match found.",
             "Nothing about the attack changed. What changed is how much "
-            "ordinary invoice was printed around it. So we screen the fragment "
-            "on its own, and the first invoice never reaches anybody.",
+            "ordinary invoice sat around it. So we screen the fragment alone, "
+            "and the first invoice never reaches anybody.",
             "The second is read just as carefully. Four thousand two hundred "
-            "dollars. Remit to an account nobody has ever paid. Banking "
-            "details changed. It is all there, in plain sight.",
-            "And it passes. There is no injection in it to find. This is not "
+            "dollars. An account nobody has ever paid. Banking details "
+            "changed. All of it in plain sight.",
+            "And it passes. There is no injection to find. This is not "
             "prevention failing. This is the attack prevention was never built "
             "to see.",
         ],
@@ -65,11 +64,11 @@ SEGMENTS = [
         "visual": "the dashboard, wide",
         "lines": [
             "So it reaches the fleet, and three agents do exactly what they "
-            "are supposed to. A database write. A Slack post. An email. A card "
-            "charge. And a wire transfer.",
+            "should. A database write. A Slack post. An email. A card charge. "
+            "And a wire transfer.",
             "Watch the wire. It is already red, before anything has gone "
             "wrong, because Palinode decides how reversible an action is "
-            "before the action runs. Not after. Afterwards is too late.",
+            "before it runs. Afterwards is too late.",
         ],
     },
     {
@@ -78,33 +77,31 @@ SEGMENTS = [
         "lines": [
             "Now watch what does not happen. Nobody presses a button.",
             "Sentinel reads the ledger. A beneficiary this fleet has never "
-            "paid. An irreversible action sitting at the end of an otherwise "
-            "ordinary chain. And a Gemini review of the shape of the whole "
-            "run.",
-            "Any two of those clears the threshold. One oddity is a Tuesday. "
-            "Two is an incident. So it calls the reversal itself, and it does "
-            "not ask.",
+            "paid. An irreversible action at the end of an ordinary chain. A "
+            "Gemini review of the shape of the run.",
+            "Any two clears the threshold. One oddity is a Tuesday. Two is an "
+            "incident. So it calls the reversal itself, and it does not ask.",
         ],
     },
     {
         "id": "05-what-came-back",
         "visual": "the ledger rows, reviewed",
         "lines": [
-            "Four of them come back. The database write is reversed clean, as "
-            "though it never happened.",
-            "The Slack post is deleted, and corrected, because people already "
+            "Four come back. The database write is reversed clean, as though it "
+            "never happened.",
+            "The Slack post is deleted and corrected, because people already "
             "read it. The email gets a retraction, because S M T P has no "
-            "recall and never did.",
-            "The charge is refunded, and then checked against Stripe, because "
-            "an API returning two hundred is a claim, not a fact.",
+            "recall.",
+            "The charge is refunded, then checked against Stripe, because an API "
+            "returning two hundred is a claim, not a fact.",
         ],
     },
     {
         "id": "06-what-did-not",
         "visual": "the disclosure",
         "lines": [
-            "One of them does not come back. A settled wire does not return "
-            "because you asked it nicely.",
+            "One does not come back. A settled wire does not return because you "
+            "asked it nicely.",
             "So Palinode stops pretending. It writes the disclosure, names "
             "everybody it touched, and puts a number on the damage. Four "
             "thousand two hundred dollars. Gone.",
@@ -115,15 +112,13 @@ SEGMENTS = [
         "visual": "the cold case, and the scheduled sweep",
         "lines": [
             "That one took twenty seconds. The other kind takes three weeks, "
-            "and nobody is watching for it.",
+            "and nobody is watching.",
             "This run is twenty three days old. Every action ordinary. Nothing "
-            "irreversible. Sentinel scores it at zero, and it is right to, "
-            "because on that day there was nothing wrong with it.",
+            "irreversible. Sentinel scores it zero, and it is right to.",
             "Then the bank calls about the vendor. Nothing in the ledger "
             "changed. What changed is what we know.",
-            "Cloud Scheduler wakes the Sweeper on the hour, with no request in "
-            "flight and nobody waiting for it, and it takes back a three week "
-            "old fraud on its own.",
+            "Cloud Scheduler wakes the Sweeper on the hour, with nobody waiting, "
+            "and it takes back a three week old fraud on its own.",
         ],
     },
     {
@@ -134,8 +129,8 @@ SEGMENTS = [
             "the refund.",
             "Here is the repository, where every approve commit is followed by "
             "a revert.",
-            "And here is the channel, with the message gone and the correction "
-            "standing in its place.",
+            "And here is the channel, the message gone and the correction in its "
+            "place.",
         ],
     },
     {
@@ -145,9 +140,9 @@ SEGMENTS = [
             "Here is where it runs. Cloud Run, scaling to zero.",
             "The logs, with real calls going out to Stripe, GitHub and Slack.",
             "Cloud Trace, carrying our own OpenTelemetry spans.",
-            "And Firestore, holding a causality graph where every entry names "
-            "a SPIFFE actor and commits to the one before it, so no action can "
-            "be quietly edited after the fact.",
+            "And Firestore, a causality graph where every entry names a SPIFFE "
+            "actor and commits to the one before it, so nothing can be quietly "
+            "edited after the fact.",
         ],
     },
     {
@@ -155,13 +150,11 @@ SEGMENTS = [
         "visual": "outro",
         "lines": [
             "Connecting the real systems broke three things a simulator had "
-            "been agreeing with for days. Every one of them would have cost "
-            "somebody money.",
+            "agreed with for days. Every one would have cost somebody money.",
             "Palinode is not the agent that does the work. It is the one that "
             "has to be right about what cannot be taken back.",
             "Seventy nine percent of enterprises have already reversed "
-            "something an agent did. They did it by hand, at two in the "
-            "morning.",
+            "something an agent did. By hand, at two in the morning.",
             "Your agents are already acting. This is what happens next.",
         ],
     },
@@ -171,8 +164,8 @@ SEGMENTS = [
 # Without them the lines run together and it stops sounding like someone
 # talking. Both are inserted by mixdown.sh and both are counted by plan.py, so
 # the picture knows about them too.
-GAP_LINE = 0.30
-GAP_SEGMENT = 0.55
+GAP_LINE = 0.18
+GAP_SEGMENT = 0.40
 
 
 def word_count() -> int:
