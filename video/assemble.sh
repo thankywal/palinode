@@ -131,9 +131,17 @@ while IFS=$'\t' read -r name kind spec offset seconds; do
       # the magnification rasterises at delivery size rather than being
       # upscaled after the fact. Vendored from video-shotcraft, Apache 2.0.
       # Rendering eight of these at 4K is most of the wall clock in this
-      # script and they do not change when only the cut does. Delete the file
-      # to force one.
-      if [ ! -f "$OUT/shot-$spec.mp4" ]; then
+      # script, so a shot is kept when it still covers the slot the cut gives
+      # it. Existing was once the whole test, which is the wrong test: a new
+      # narration makes the slots longer, -t cannot lengthen a file, and the
+      # film silently went short and out of sync from that shot onward. It has
+      # to be long enough, not merely present.
+      have=0
+      if [ -f "$OUT/shot-$spec.mp4" ]; then
+        have=$(ffprobe -v error -show_entries format=duration -of csv=p=0 \
+          "$OUT/shot-$spec.mp4")
+      fi
+      if (( $(echo "$have < $seconds" | bc -l) )); then
         npx remotion render "shot-$spec" "$OUT/shot-$spec.mp4" --scale=2 --log=error
       fi
       ffmpeg -nostdin -v error -y -i "$OUT/shot-$spec.mp4" -t "$seconds" \

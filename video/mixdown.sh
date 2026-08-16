@@ -45,8 +45,18 @@ echo "stitching the narration"
 LINE_GAP=$(python3 -c "import json;print(json.load(open('$VO/timing.json'))['gap_line'])")
 SEG_GAP=$(python3 -c "import json;print(json.load(open('$VO/timing.json'))['gap_segment'])")
 
-ffmpeg -nostdin -v error -y -f lavfi -t "$LINE_GAP" -i anullsrc=r=24000:cl=mono "$VO/gap-line.wav"
-ffmpeg -nostdin -v error -y -f lavfi -t "$SEG_GAP"  -i anullsrc=r=24000:cl=mono "$VO/gap-seg.wav"
+# A gap of zero is not a very short silence, it is no silence at all. anullsrc
+# reads -t 0 as "keep going", and the first time the line gap went to zero it
+# wrote a thirty one gigabyte wav and filled the disk before anything noticed.
+# Since the breaths between lines became part of the take, zero is the normal
+# value here rather than an odd one.
+for gap in line:"$LINE_GAP" seg:"$SEG_GAP"; do
+  name=${gap%%:*}; secs=${gap#*:}
+  if (( $(echo "$secs > 0" | bc -l) )); then
+    ffmpeg -nostdin -v error -y -f lavfi -t "$secs" -i anullsrc=r=24000:cl=mono \
+      "$VO/gap-$name.wav"
+  fi
+done
 
 # The concat demuxer resolves paths relative to the list file, so the list
 # lives beside the audio it names rather than in the build directory.
@@ -56,13 +66,16 @@ vo = pathlib.Path("audio/vo")
 timing = json.loads((vo / "timing.json").read_text())
 segments = timing["segments"]
 
+line_gap = timing["gap_line"] > 0
+seg_gap = timing["gap_segment"] > 0
+
 order = []
 for i, segment in enumerate(segments):
     for n, line in enumerate(segment["lines"]):
         order.append(line["file"])
-        if n < len(segment["lines"]) - 1:
+        if line_gap and n < len(segment["lines"]) - 1:
             order.append("gap-line.wav")
-    if i < len(segments) - 1:
+    if seg_gap and i < len(segments) - 1:
         order.append("gap-seg.wav")
 
 (vo / "order.txt").write_text("".join(f"file '{f}'\n" for f in order))
@@ -161,4 +174,7 @@ echo
 echo "  $OUT/soundtrack.wav"
 ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 "$OUT/soundtrack.wav"
 echo "  measured loudness:"
-ffmpeg -nostdin -v error -i "$OUT/soundtrack.wav" -af ebur128=peak=true -f null - 2>&1 | tail -8 | sed 's/^/    /'
+# ebur128 writes its summary at info level, so asking for errors only asked
+# for an empty report every time.
+ffmpeg -nostdin -v info -i "$OUT/soundtrack.wav" -af ebur128=peak=true -f null - 2>&1 \
+  | grep -E "Integrated|Range|Peak|LUFS|LU$" | tail -8 | sed 's/^/    /'

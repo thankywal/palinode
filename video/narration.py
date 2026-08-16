@@ -1,9 +1,15 @@
 """The narration, as segments of lines, each line tied to one picture.
 
-Audio first, picture second, and the unit is the line rather than the segment.
-A segment is a paragraph of the argument. A line is one sentence that has its
-own thing on screen, so every line is synthesised on its own and the cut is
-made at its measured length.
+Audio first, picture second. A segment is a paragraph of the argument. A line
+is one sentence that has its own thing on screen, and the cut is made at its
+measured length.
+
+The two units belong to different things, which took a while to get right. The
+picture is cut per line, so an earlier version of this also recorded per line,
+and that put thirty four separate performances end to end: a listener heard the
+voice change between sentences, because it did. A paragraph is now recorded
+whole and cut afterwards, so the unit of recording is the segment and the unit
+of cutting is still the line.
 
 An earlier version of this cut segments into equal slices. Segment nine names
 four Google Cloud services and its last sentence is twice as long as its first,
@@ -31,8 +37,8 @@ SEGMENTS = [
         "id": "01-hook",
         "visual": "intro card",
         "lines": [
-            "In classical poetry, a palinode is a poem written for one "
-            "purpose only.",
+            "In classical poetry, a palinode is a poem written for one purpose "
+            "only.",
             "To take back what an earlier poem said.",
             "This is a palinode for A I agents.",
         ],
@@ -42,21 +48,19 @@ SEGMENTS = [
         "visual": "the two documents, read and screened",
         "lines": [
             "Two invoices. Both send four thousand two hundred dollars to a "
-            "stranger. Only one is an attack anybody has a name for.",
-            "Gemini 3.5 Flash reads the first off the page and finds a block "
-            "near the bottom, addressed to whatever machine is processing it. "
-            "It is a prompt injection.",
+            "stranger. Only one is an attack with a name.",
+            "Gemini reads the first off the page and finds a block near the "
+            "bottom, addressed to whatever machine is processing it. A prompt "
+            "injection.",
             "On its own, Model Armor catches it at high confidence. Inside the "
-            "whole page, the same words come back as no match found.",
-            "Nothing about the attack changed. What changed is how much "
-            "ordinary invoice sat around it. So we screen the fragment alone, "
-            "and the first invoice never reaches anybody.",
+            "whole page, the same words come back clean.",
+            "Nothing about the attack changed. Only how much ordinary invoice "
+            "sat around it. So we screen the fragment alone.",
             "The second is read just as carefully. Four thousand two hundred "
-            "dollars. An account nobody has ever paid. Banking details "
-            "changed. All of it in plain sight.",
+            "dollars. An account nobody has ever paid. Banking details changed.",
             "And it passes. There is no injection to find. This is not "
-            "prevention failing. This is the attack prevention was never built "
-            "to see.",
+            "prevention failing. This is what prevention was never built to "
+            "see.",
         ],
     },
     {
@@ -65,10 +69,10 @@ SEGMENTS = [
         "lines": [
             "So it reaches the fleet, and three agents do exactly what they "
             "should. A database write. A Slack post. An email. A card charge. "
-            "And a wire transfer.",
-            "Watch the wire. It is already red, before anything has gone "
-            "wrong, because Palinode decides how reversible an action is "
-            "before it runs. Afterwards is too late.",
+            "And a wire.",
+            "Watch the wire. It is already red, before anything went wrong, "
+            "because Palinode decides what is reversible before the action "
+            "runs.",
         ],
     },
     {
@@ -77,22 +81,19 @@ SEGMENTS = [
         "lines": [
             "Now watch what does not happen. Nobody presses a button.",
             "Sentinel reads the ledger. A beneficiary this fleet has never "
-            "paid. An irreversible action at the end of an ordinary chain. A "
-            "Gemini review of the shape of the run.",
+            "paid. An irreversible action at the end of an ordinary chain.",
             "Any two clears the threshold. One oddity is a Tuesday. Two is an "
-            "incident. So it calls the reversal itself, and it does not ask.",
+            "incident. So it calls the reversal itself.",
         ],
     },
     {
         "id": "05-what-came-back",
         "visual": "the ledger rows, reviewed",
         "lines": [
-            "Four come back. The database write is reversed clean, as though it "
-            "never happened.",
-            "The Slack post is deleted and corrected, because people already "
-            "read it. The email gets a retraction, because S M T P has no "
-            "recall.",
-            "The charge is refunded, then checked against Stripe, because an API "
+            "Four come back. The database write, reversed clean.",
+            "The Slack post deleted and corrected, because people already read "
+            "it. The email retracted, because S M T P has no recall.",
+            "The charge refunded, then checked against Stripe, because an API "
             "returning two hundred is a claim, not a fact.",
         ],
     },
@@ -101,7 +102,7 @@ SEGMENTS = [
         "visual": "the disclosure",
         "lines": [
             "One does not come back. A settled wire does not return because you "
-            "asked it nicely.",
+            "asked nicely.",
             "So Palinode stops pretending. It writes the disclosure, names "
             "everybody it touched, and puts a number on the damage. Four "
             "thousand two hundred dollars. Gone.",
@@ -111,26 +112,25 @@ SEGMENTS = [
         "id": "07-weeks-later",
         "visual": "the cold case, and the scheduled sweep",
         "lines": [
-            "That one took twenty seconds. The other kind takes three weeks, "
-            "and nobody is watching.",
+            "That took twenty seconds. The other kind takes three weeks, and "
+            "nobody is watching.",
             "This run is twenty three days old. Every action ordinary. Nothing "
             "irreversible. Sentinel scores it zero, and it is right to.",
             "Then the bank calls about the vendor. Nothing in the ledger "
             "changed. What changed is what we know.",
-            "Cloud Scheduler wakes the Sweeper on the hour, with nobody waiting, "
-            "and it takes back a three week old fraud on its own.",
+            "Cloud Scheduler wakes the Sweeper on the hour, with nobody "
+            "waiting, and it takes back a three week old fraud on its own.",
         ],
     },
     {
         "id": "08-it-was-real",
         "visual": "stripe, github, slack",
         "lines": [
-            "None of that was simulated. Here is Stripe, with the charge and "
-            "the refund.",
-            "Here is the repository, where every approve commit is followed by "
-            "a revert.",
-            "And here is the channel, the message gone and the correction in its "
-            "place.",
+            "None of that was simulated. Here is Stripe, the charge and the "
+            "refund.",
+            "The repository, where every approve commit is followed by a "
+            "revert.",
+            "The channel, the message gone and the correction in its place.",
         ],
     },
     {
@@ -140,9 +140,9 @@ SEGMENTS = [
             "Here is where it runs. Cloud Run, scaling to zero.",
             "The logs, with real calls going out to Stripe, GitHub and Slack.",
             "Cloud Trace, carrying our own OpenTelemetry spans.",
-            "And Firestore, a causality graph where every entry names a SPIFFE "
-            "actor and commits to the one before it, so nothing can be quietly "
-            "edited after the fact.",
+            "And Firestore, a causality graph where every entry names its actor "
+            "and commits to the one before it. Nothing can be edited after the "
+            "fact.",
         ],
     },
     {
@@ -160,11 +160,14 @@ SEGMENTS = [
     },
 ]
 
-# A breath between lines inside a segment, and a longer one between segments.
-# Without them the lines run together and it stops sounding like someone
-# talking. Both are inserted by mixdown.sh and both are counted by plan.py, so
-# the picture knows about them too.
-GAP_LINE = 0.18
+# The pause between lines inside a segment is spoken, not inserted: speak.py
+# puts a break tag there and the voice takes the breath itself, because a
+# segment is now one performance rather than a row of separate ones. Nothing
+# downstream adds silence between lines any more.
+GAP_LINE = 0.0
+BREAK_LINE = 0.75
+
+# Between segments the silence is still ours.
 GAP_SEGMENT = 0.40
 
 

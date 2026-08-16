@@ -1,290 +1,290 @@
 {
   "engine": "elevenlabs",
-  "gap_line": 0.18,
+  "gap_line": 0.0,
   "gap_segment": 0.4,
-  "total": 235.431,
+  "total": 263.895,
   "segments": [
     {
       "id": "01-hook",
       "visual": "intro card",
       "start": 0.0,
-      "seconds": 8.859,
+      "seconds": 12.399,
       "lines": [
         {
           "file": "01-hook-1.wav",
           "text": "In classical poetry, a palinode is a poem written for one purpose only.",
           "start": 0.0,
-          "seconds": 4.133
+          "seconds": 5.632
         },
         {
           "file": "01-hook-2.wav",
           "text": "To take back what an earlier poem said.",
-          "start": 4.313,
-          "seconds": 2.09
+          "start": 5.632,
+          "seconds": 3.157
         },
         {
           "file": "01-hook-3.wav",
           "text": "This is a palinode for A I agents.",
-          "start": 6.583,
-          "seconds": 2.276
+          "start": 8.789,
+          "seconds": 3.61
         }
       ]
     },
     {
       "id": "02-two-invoices",
       "visual": "the two documents, read and screened",
-      "start": 9.259,
-      "seconds": 55.606,
+      "start": 12.799,
+      "seconds": 57.074,
       "lines": [
         {
           "file": "02-two-invoices-1.wav",
-          "text": "Two invoices. Both send four thousand two hundred dollars to a stranger. Only one is an attack anybody has a name for.",
-          "start": 9.259,
-          "seconds": 7.338
+          "text": "Two invoices. Both send four thousand two hundred dollars to a stranger. Only one is an attack with a name.",
+          "start": 12.799,
+          "seconds": 8.448
         },
         {
           "file": "02-two-invoices-2.wav",
-          "text": "Gemini 3.5 Flash reads the first off the page and finds a block near the bottom, addressed to whatever machine is processing it. It is a prompt injection.",
-          "start": 16.777,
-          "seconds": 9.892
+          "text": "Gemini reads the first off the page and finds a block near the bottom, addressed to whatever machine is processing it. A prompt injection.",
+          "start": 21.247,
+          "seconds": 9.557
         },
         {
           "file": "02-two-invoices-3.wav",
-          "text": "On its own, Model Armor catches it at high confidence. Inside the whole page, the same words come back as no match found.",
-          "start": 26.849,
-          "seconds": 8.173
+          "text": "On its own, Model Armor catches it at high confidence. Inside the whole page, the same words come back clean.",
+          "start": 30.804,
+          "seconds": 8.875
         },
         {
           "file": "02-two-invoices-4.wav",
-          "text": "Nothing about the attack changed. What changed is how much ordinary invoice sat around it. So we screen the fragment alone, and the first invoice never reaches anybody.",
-          "start": 35.202,
-          "seconds": 9.985
+          "text": "Nothing about the attack changed. Only how much ordinary invoice sat around it. So we screen the fragment alone.",
+          "start": 39.679,
+          "seconds": 9.216
         },
         {
           "file": "02-two-invoices-5.wav",
-          "text": "The second is read just as carefully. Four thousand two hundred dollars. An account nobody has ever paid. Banking details changed. All of it in plain sight.",
-          "start": 45.367,
-          "seconds": 10.82
+          "text": "The second is read just as carefully. Four thousand two hundred dollars. An account nobody has ever paid. Banking details changed.",
+          "start": 48.895,
+          "seconds": 10.581
         },
         {
           "file": "02-two-invoices-6.wav",
-          "text": "And it passes. There is no injection to find. This is not prevention failing. This is the attack prevention was never built to see.",
-          "start": 56.367,
-          "seconds": 8.498
+          "text": "And it passes. There is no injection to find. This is not prevention failing. This is what prevention was never built to see.",
+          "start": 59.476,
+          "seconds": 10.397
         }
       ]
     },
     {
       "id": "03-fleet-acts",
       "visual": "the dashboard, wide",
-      "start": 65.265,
-      "seconds": 21.264,
+      "start": 70.273,
+      "seconds": 20.851,
       "lines": [
         {
           "file": "03-fleet-acts-1.wav",
-          "text": "So it reaches the fleet, and three agents do exactly what they should. A database write. A Slack post. An email. A card charge. And a wire transfer.",
-          "start": 65.265,
-          "seconds": 10.542
+          "text": "So it reaches the fleet, and three agents do exactly what they should. A database write. A Slack post. An email. A card charge. And a wire.",
+          "start": 70.273,
+          "seconds": 10.837
         },
         {
           "file": "03-fleet-acts-2.wav",
-          "text": "Watch the wire. It is already red, before anything has gone wrong, because Palinode decides how reversible an action is before it runs. Afterwards is too late.",
-          "start": 75.987,
-          "seconds": 10.542
+          "text": "Watch the wire. It is already red, before anything went wrong, because Palinode decides what is reversible before the action runs.",
+          "start": 81.11,
+          "seconds": 10.014
         }
       ]
     },
     {
       "id": "04-sentinel",
       "visual": "the dashboard, wide",
-      "start": 86.929,
-      "seconds": 23.394,
+      "start": 91.524,
+      "seconds": 23.637,
       "lines": [
         {
           "file": "04-sentinel-1.wav",
           "text": "Now watch what does not happen. Nobody presses a button.",
-          "start": 86.929,
-          "seconds": 3.065
+          "start": 91.524,
+          "seconds": 4.437
         },
         {
           "file": "04-sentinel-2.wav",
-          "text": "Sentinel reads the ledger. A beneficiary this fleet has never paid. An irreversible action at the end of an ordinary chain. A Gemini review of the shape of the run.",
-          "start": 90.174,
-          "seconds": 10.635
+          "text": "Sentinel reads the ledger. A beneficiary this fleet has never paid. An irreversible action at the end of an ordinary chain.",
+          "start": 95.961,
+          "seconds": 9.301
         },
         {
           "file": "04-sentinel-3.wav",
-          "text": "Any two clears the threshold. One oddity is a Tuesday. Two is an incident. So it calls the reversal itself, and it does not ask.",
-          "start": 100.989,
-          "seconds": 9.334
+          "text": "Any two clears the threshold. One oddity is a Tuesday. Two is an incident. So it calls the reversal itself.",
+          "start": 105.262,
+          "seconds": 9.899
         }
       ]
     },
     {
       "id": "05-what-came-back",
       "visual": "the ledger rows, reviewed",
-      "start": 110.723,
-      "seconds": 20.283,
+      "start": 115.561,
+      "seconds": 23.546,
       "lines": [
         {
           "file": "05-what-came-back-1.wav",
-          "text": "Four come back. The database write is reversed clean, as though it never happened.",
-          "start": 110.723,
-          "seconds": 4.458
+          "text": "Four come back. The database write, reversed clean.",
+          "start": 115.561,
+          "seconds": 4.523
         },
         {
           "file": "05-what-came-back-2.wav",
-          "text": "The Slack post is deleted and corrected, because people already read it. The email gets a retraction, because S M T P has no recall.",
-          "start": 115.361,
-          "seconds": 8.731
+          "text": "The Slack post deleted and corrected, because people already read it. The email retracted, because S M T P has no recall.",
+          "start": 120.084,
+          "seconds": 9.643
         },
         {
           "file": "05-what-came-back-3.wav",
-          "text": "The charge is refunded, then checked against Stripe, because an API returning two hundred is a claim, not a fact.",
-          "start": 124.272,
-          "seconds": 6.734
+          "text": "The charge refunded, then checked against Stripe, because an API returning two hundred is a claim, not a fact.",
+          "start": 129.727,
+          "seconds": 9.38
         }
       ]
     },
     {
       "id": "06-what-did-not",
       "visual": "the disclosure",
-      "start": 131.406,
-      "seconds": 14.53,
+      "start": 139.507,
+      "seconds": 18.297,
       "lines": [
         {
           "file": "06-what-did-not-1.wav",
-          "text": "One does not come back. A settled wire does not return because you asked it nicely.",
-          "start": 131.406,
-          "seconds": 4.876
+          "text": "One does not come back. A settled wire does not return because you asked nicely.",
+          "start": 139.507,
+          "seconds": 5.973
         },
         {
           "file": "06-what-did-not-2.wav",
           "text": "So Palinode stops pretending. It writes the disclosure, names everybody it touched, and puts a number on the damage. Four thousand two hundred dollars. Gone.",
-          "start": 136.462,
-          "seconds": 9.474
+          "start": 145.48,
+          "seconds": 12.324
         }
       ]
     },
     {
       "id": "07-weeks-later",
       "visual": "the cold case, and the scheduled sweep",
-      "start": 146.336,
-      "seconds": 26.592,
+      "start": 158.204,
+      "seconds": 32.741,
       "lines": [
         {
           "file": "07-weeks-later-1.wav",
-          "text": "That one took twenty seconds. The other kind takes three weeks, and nobody is watching.",
-          "start": 146.336,
-          "seconds": 5.062
+          "text": "That took twenty seconds. The other kind takes three weeks, and nobody is watching.",
+          "start": 158.204,
+          "seconds": 5.547
         },
         {
           "file": "07-weeks-later-2.wav",
           "text": "This run is twenty three days old. Every action ordinary. Nothing irreversible. Sentinel scores it zero, and it is right to.",
-          "start": 151.578,
-          "seconds": 8.266
+          "start": 163.751,
+          "seconds": 10.24
         },
         {
           "file": "07-weeks-later-3.wav",
           "text": "Then the bank calls about the vendor. Nothing in the ledger changed. What changed is what we know.",
-          "start": 160.024,
-          "seconds": 5.851
+          "start": 173.991,
+          "seconds": 8.107
         },
         {
           "file": "07-weeks-later-4.wav",
           "text": "Cloud Scheduler wakes the Sweeper on the hour, with nobody waiting, and it takes back a three week old fraud on its own.",
-          "start": 166.055,
-          "seconds": 6.873
+          "start": 182.098,
+          "seconds": 8.847
         }
       ]
     },
     {
       "id": "08-it-was-real",
       "visual": "stripe, github, slack",
-      "start": 173.328,
-      "seconds": 14.385,
+      "start": 191.345,
+      "seconds": 15.047,
       "lines": [
         {
           "file": "08-it-was-real-1.wav",
-          "text": "None of that was simulated. Here is Stripe, with the charge and the refund.",
-          "start": 173.328,
-          "seconds": 4.598
+          "text": "None of that was simulated. Here is Stripe, the charge and the refund.",
+          "start": 191.345,
+          "seconds": 5.376
         },
         {
           "file": "08-it-was-real-2.wav",
-          "text": "Here is the repository, where every approve commit is followed by a revert.",
-          "start": 178.106,
-          "seconds": 4.551
+          "text": "The repository, where every approve commit is followed by a revert.",
+          "start": 196.721,
+          "seconds": 5.035
         },
         {
           "file": "08-it-was-real-3.wav",
-          "text": "And here is the channel, the message gone and the correction in its place.",
-          "start": 182.837,
-          "seconds": 4.876
+          "text": "The channel, the message gone and the correction in its place.",
+          "start": 201.756,
+          "seconds": 4.636
         }
       ]
     },
     {
       "id": "09-google-cloud",
       "visual": "cloud run, logs, trace, firestore",
-      "start": 188.113,
-      "seconds": 21.764,
+      "start": 206.792,
+      "seconds": 24.891,
       "lines": [
         {
           "file": "09-google-cloud-1.wav",
           "text": "Here is where it runs. Cloud Run, scaling to zero.",
-          "start": 188.113,
-          "seconds": 3.715
+          "start": 206.792,
+          "seconds": 4.352
         },
         {
           "file": "09-google-cloud-2.wav",
           "text": "The logs, with real calls going out to Stripe, GitHub and Slack.",
-          "start": 192.008,
-          "seconds": 4.18
+          "start": 211.144,
+          "seconds": 5.717
         },
         {
           "file": "09-google-cloud-3.wav",
           "text": "Cloud Trace, carrying our own OpenTelemetry spans.",
-          "start": 196.368,
-          "seconds": 3.344
+          "start": 216.861,
+          "seconds": 4.437
         },
         {
           "file": "09-google-cloud-4.wav",
-          "text": "And Firestore, a causality graph where every entry names a SPIFFE actor and commits to the one before it, so nothing can be quietly edited after the fact.",
-          "start": 199.892,
-          "seconds": 9.985
+          "text": "And Firestore, a causality graph where every entry names its actor and commits to the one before it. Nothing can be edited after the fact.",
+          "start": 221.298,
+          "seconds": 10.385
         }
       ]
     },
     {
       "id": "10-close",
       "visual": "outro",
-      "start": 210.277,
-      "seconds": 25.154,
+      "start": 232.083,
+      "seconds": 31.812,
       "lines": [
         {
           "file": "10-close-1.wav",
           "text": "Connecting the real systems broke three things a simulator had agreed with for days. Every one would have cost somebody money.",
-          "start": 210.277,
-          "seconds": 7.895
+          "start": 232.083,
+          "seconds": 9.472
         },
         {
           "file": "10-close-2.wav",
           "text": "Palinode is not the agent that does the work. It is the one that has to be right about what cannot be taken back.",
-          "start": 218.352,
-          "seconds": 6.641
+          "start": 241.555,
+          "seconds": 8.448
         },
         {
           "file": "10-close-3.wav",
           "text": "Seventy nine percent of enterprises have already reversed something an agent did. By hand, at two in the morning.",
-          "start": 225.173,
-          "seconds": 6.502
+          "start": 250.003,
+          "seconds": 8.875
         },
         {
           "file": "10-close-4.wav",
           "text": "Your agents are already acting. This is what happens next.",
-          "start": 231.855,
-          "seconds": 3.576
+          "start": 258.878,
+          "seconds": 5.017
         }
       ]
     }
