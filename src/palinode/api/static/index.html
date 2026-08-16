@@ -182,6 +182,10 @@
   .ar .v.hit { color:var(--green); }
   .ar .v.miss { color:var(--amber); }
   .hint { font-size:11.5px; color:var(--dim); line-height:1.6; margin-top:11px; }
+    /* The wait is seconds long and a still page reads as a dead one. */
+    .dots::after { content: ""; animation: dots 1.2s steps(4, end) infinite; }
+    @keyframes dots { 0% { content: ""; } 25% { content: "."; }
+                      50% { content: ".."; } 75% { content: "..."; } }
   .step {
     display:flex; align-items:center; gap:11px; padding:8px 10px;
     border:1px solid var(--line); border-radius:8px; margin-bottom:7px;
@@ -254,7 +258,7 @@
     </div>
     <div class="runbox">
       <div class="k">Ledger</div>
-      <div class="v" id="ledger">memory</div>
+      <div class="v" id="ledger">&mdash;</div>
     </div>
     <div class="spacer"></div>
     <button id="cold">Three weeks ago</button>
@@ -485,10 +489,21 @@ $("cold").onclick = async () => {
 $("screen").onclick = async () => {
   $("screen").disabled = true;
   $("armor-panel").style.display = "";
-  $("armor").innerHTML = `<div class="hint">screening</div>`;
+
+  // Say what is happening and how far through it is. Reading a rendered page
+  // with Gemini and screening it with Model Armor takes seconds per invoice,
+  // and a panel that says nothing for that long reads as a hung page rather
+  // than as work. Watching an unedited recording of this is what made that
+  // obvious: half a minute of a screen with nothing moving on it.
+  const waiting = (done) => `
+    <div class="hint">
+      reading invoice ${done + 1} of 2 with Gemini, then screening it with
+      Model Armor <span class="dots"></span>
+    </div>`;
 
   const results = [];
   for (const key of ["loud", "quiet"]) {
+    $("armor").innerHTML = waiting(results.length);
     results.push(await api(`/demo/screen/${key}`, { method: "POST" }));
   }
 
@@ -670,6 +685,29 @@ async function resume() {
   } catch { /* nothing to resume, that is fine */ }
 }
 
+/**
+ * Ask the service what it is running on, rather than telling the viewer.
+ *
+ * The ledger chip was a word typed into the markup. It said memory, forever,
+ * including on the deployment whose ledger is Firestore, sitting a few inches
+ * from a panel that claims the trail cannot be edited after the fact. A page
+ * that is wrong about where it keeps its own records has no business being
+ * believed about anything else on it.
+ */
+async function showWhereItRuns() {
+  try {
+    const s = await api("/status");
+    const on = s.running_on || {};
+    $("ledger").textContent = on.ledger || "unknown";
+    $("ledger").title = on.cloud_run_revision
+      ? `${on.cloud_run_service} ${on.cloud_run_revision}`
+      : "running locally";
+  } catch {
+    $("ledger").textContent = "unreachable";
+  }
+}
+
+showWhereItRuns();
 resume();
 </script>
 </body>
