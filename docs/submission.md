@@ -1,5 +1,10 @@
 # Where the submitted text lives
 
+Submitted to the All Things Agentic Hackathon on 2026-08-17, Fortified
+Enterprise Fleet track. Devpost propagates project edits to a submission that
+is already in, so this is a floor rather than a deadline: everything below can
+still be improved until 2026-09-01 07:00 GMT+7.
+
 The project story is on Devpost and that is the only copy:
 
     https://devpost.com/software/palinode-ctrl-z-for-ai-agent-fleets
