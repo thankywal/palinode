@@ -67,7 +67,24 @@ The channel About text is in docs/channel-about.txt.
 
 ## 2. LinkedIn
 
+Posted: https://www.linkedin.com/posts/than-kywal-nyein-3b1808318_allthingsagentichackathon-ugcPost-7494982407415181312-AENs
+
 The hashtag is what earns the point. It has to be there.
+
+The version that went up is not the draft below. It leads with the Model Armor
+measurement rather than with the project, because the measurement is the part
+another engineer would save, and it ends with a question rather than a link,
+because the reason to post at all is to find the five people who run agent
+fleets in production. A hackathon post that announces a hackathon project is
+a hackathon post. This one is customer discovery with a hashtag on it.
+
+Two numbers were wrong in the draft and were caught before it went up: it
+said the work took two weeks and that the measurement was made last week.
+The first commit is three days old. Everything else in the post is precise,
+which is the only reason any of it is worth reading, so a soft number in the
+middle of it would have cost more than it was worth.
+
+The draft as first written:
 
     79 percent of enterprises have already had to reverse an action taken by
     an AI agent. Not block it. Reverse it, after it happened.

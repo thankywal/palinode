@@ -60,7 +60,7 @@ than composed under time pressure at the form.
 | Startup prize, organization | Oro Shin |
 | Startup prize, corporate email | thankywal_ceo@oroshin.site |
 | Bonus, content | https://youtu.be/FrXYmZm8r60 (the unedited take, a separate public upload) |
-| Bonus, social post | LinkedIn, text in `publish.md` |
+| Bonus, social post | https://www.linkedin.com/posts/than-kywal-nyein-3b1808318_allthingsagentichackathon-ugcPost-7494982407415181312-AENs |
 | Architecture diagram | `docs/architecture.png`, uploaded to the form |
 
 The demo video is https://youtu.be/AdAM5l4tWAY, public, 3:53.
