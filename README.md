@@ -14,7 +14,10 @@ and reports the exposure.
 
 Built with the Google Agent Development Kit, Gemini 3.5 Flash and Model Armor.
 
-**Demo:** https://youtu.be/AdAM5l4tWAY — four minutes, against the deployed
+**Unedited take:** https://youtu.be/FrXYmZm8r60 — one browser session
+against the deployed service, no cuts, no narration, at the speed it runs.
+
+**Demo film:** https://youtu.be/AdAM5l4tWAY — four minutes, against the deployed
 service. The charge, the commit and the Slack message in it are real, and so
 are the refund, the revert and the deletion.
 

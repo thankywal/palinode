@@ -58,6 +58,9 @@ covers both with one file.
 
 Uploaded: https://youtu.be/AdAM5l4tWAY
 
+The unedited take is a second upload, public as well:
+https://youtu.be/FrXYmZm8r60
+
 The channel About text is in docs/channel-about.txt.
 
 ---

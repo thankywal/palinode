@@ -59,7 +59,7 @@ than composed under time pressure at the form.
 | Google AI models | Gemini 3.5 Flash, Lyria, Chirp3 HD, Speech to Text |
 | Startup prize, organization | Oro Shin |
 | Startup prize, corporate email | thankywal_ceo@oroshin.site |
-| Bonus, content | https://youtu.be/AdAM5l4tWAY |
+| Bonus, content | https://youtu.be/FrXYmZm8r60 (the unedited take, a separate public upload) |
 | Bonus, social post | LinkedIn, text in `publish.md` |
 | Architecture diagram | `docs/architecture.png`, uploaded to the form |
 
